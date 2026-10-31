@@ -1,0 +1,20 @@
+name = "projectvault"
+main = "src/worker.ts"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+# Serve the built React/Vite frontend static assets
+[assets]
+directory = "./dist"
+binding = "ASSETS"
+html_handling = "auto-trailing-slash"
+not_found_handling = "single-page-application"
+
+[vars]
+GITHUB_OWNER = "hrishabhgupt"
+GITHUB_REPO = "my-live-projects"
+GITHUB_BRANCH = "main"
+
+# Scheduled triggers for periodic Deployment Health Monitoring (runs every 6 hours)
+[triggers]
+crons = ["0 */6 * * *"]
