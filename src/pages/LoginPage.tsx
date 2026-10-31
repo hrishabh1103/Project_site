@@ -69,20 +69,30 @@ export const LoginPage: React.FC = () => {
 
         {/* Demo Mode Helper Notice */}
         {!isConfigured && (
-          <div className="p-4 rounded-xl bg-muted/60 border border-border text-xs text-foreground space-y-2">
+          <div className="p-4 rounded-xl bg-muted/60 border border-border text-xs text-foreground space-y-3">
             <div className="flex items-center gap-2 font-semibold">
               <Sparkles className="w-4 h-4 text-primary" />
-              Local Development Mode
+              <span>Default Admin Credentials</span>
             </div>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Supabase cloud credentials are not detected in the environment. You can use the quick login button below to explore all admin capabilities immediately:
+            <div className="p-2.5 rounded-lg bg-card border border-border space-y-1 text-xs font-mono">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Email:</span>
+                <span className="font-semibold text-foreground">admin@projectvault.local</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Password:</span>
+                <span className="font-semibold text-foreground">projectvault123</span>
+              </div>
+            </div>
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+              In local mode, you can use these credentials, any email with a 6+ char password, or click the quick button below:
             </p>
             <button
               type="button"
               onClick={handleDemoLogin}
-              className="w-full mt-1 py-2.5 px-3 rounded-xl bg-primary text-primary-foreground hover:opacity-90 font-medium text-xs shadow-sm transition-all"
+              className="w-full py-2.5 px-3 rounded-xl bg-primary text-primary-foreground hover:opacity-90 font-medium text-xs shadow-sm transition-all"
             >
-              1-Click Owner Sign In (Demo Mode)
+              1-Click Owner Sign In
             </button>
           </div>
         )}
