@@ -64,7 +64,18 @@ export const Navbar: React.FC = () => {
           <Link
             to="/"
             className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
-              isActive('/') || isActive('/projects')
+              isActive('/')
+                ? 'text-slate-900 dark:text-white bg-slate-100 dark:bg-zinc-800'
+                : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-zinc-900'
+            }`}
+          >
+            Dashboard
+          </Link>
+
+          <Link
+            to="/projects"
+            className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
+              isActive('/projects')
                 ? 'text-slate-900 dark:text-white bg-slate-100 dark:bg-zinc-800'
                 : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-zinc-900'
             }`}
@@ -81,17 +92,18 @@ export const Navbar: React.FC = () => {
             }`}
           >
             <span>Live Health</span>
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
           </Link>
 
           <a
-            href={`https://github.com/${githubConfig.repo_owner}/${githubConfig.repo_name}`}
+            href="https://github.com/hrishabh1103/my-live-projects"
             target="_blank"
-            rel="noreferrer"
-            className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-zinc-900 transition-colors"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium text-slate-700 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
+            title="View public GitHub repository (hrishabh1103/my-live-projects)"
           >
-            <GithubIcon className="w-3.5 h-3.5" />
-            <span>GitHub</span>
+            <GithubIcon className="w-4 h-4 text-slate-800 dark:text-zinc-200" />
+            <span className="hidden sm:inline">GitHub</span>
             <ExternalLink className="w-3 h-3 text-slate-400" />
           </a>
         </nav>
@@ -180,3 +192,4 @@ export const Navbar: React.FC = () => {
     </header>
   );
 };
+

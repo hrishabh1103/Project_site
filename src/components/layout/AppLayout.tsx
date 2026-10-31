@@ -70,13 +70,13 @@ export const AppLayout: React.FC = () => {
             </a>
             <span>·</span>
             <a
-              href={`https://github.com/${githubConfig.repo_owner}/${githubConfig.repo_name}`}
+              href="https://github.com/hrishabh1103/my-live-projects"
               target="_blank"
               rel="noreferrer"
-              className="hover:text-primary transition-colors flex items-center gap-1"
+              className="hover:text-primary transition-colors flex items-center gap-1.5"
             >
               <GithubIcon className="w-3.5 h-3.5" />
-              <span>{githubConfig.repo_name}</span>
+              <span>hrishabh1103/my-live-projects</span>
             </a>
           </div>
 

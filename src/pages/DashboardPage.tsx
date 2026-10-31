@@ -1,23 +1,26 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
-  FolderGit2,
   Activity,
   CheckCircle2,
   Clock,
-  AlertTriangle,
   Server,
   RefreshCw,
   ExternalLink,
   GitBranch,
-  ArrowUpRight,
-  Radio,
+  Search,
+  Filter,
+  Layers,
+  Sparkles,
+  ArrowRight,
+  ShieldCheck,
 } from 'lucide-react';
 import { useProjects } from '../context/ProjectContext';
 import { useToast } from '../context/ToastContext';
 import { StatusBadge } from '../components/ui/StatusBadge';
-import { HealthBadge } from '../components/ui/HealthBadge';
 import { CategoryBadge } from '../components/ui/CategoryBadge';
+import { GithubIcon } from '../components/ui/GithubIcon';
+import { Project } from '../types';
 
 export const DashboardPage: React.FC = () => {
   const { projects, stats, syncAllToGithub, checkAllProjectsHealth, githubConfig, syncLogs } =
@@ -27,6 +30,11 @@ export const DashboardPage: React.FC = () => {
 
   const [isSyncing, setIsSyncing] = useState(false);
   const [isCheckingHealth, setIsCheckingHealth] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('All');
+  const [liveOnly, setLiveOnly] = useState<boolean>(false);
+
+  const CANONICAL_REPO_URL = 'https://github.com/hrishabh1103/my-live-projects';
 
   const handleSyncAll = async () => {
     setIsSyncing(true);
@@ -34,8 +42,8 @@ export const DashboardPage: React.FC = () => {
       const res = await syncAllToGithub();
       if (res.success) {
         success(
-          'Sync Completed',
-          `All ${projects.length} projects synced to ${githubConfig.repo_owner}/${githubConfig.repo_name}`,
+          'GitHub Synchronization Success',
+          `All ${projects.length} project specifications, README.md, and catalog synced to hrishabh1103/my-live-projects!`,
           res.commitUrl ? { text: 'View on GitHub', url: res.commitUrl } : undefined
         );
       } else {
@@ -52,7 +60,7 @@ export const DashboardPage: React.FC = () => {
       const res = await checkAllProjectsHealth();
       success(
         'Health Checks Completed',
-        `Checked ${res.checked} projects: ${res.healthy} responsive, ${res.failed} issues detected.`
+        `Checked ${res.checked} projects: ${res.healthy} responsive endpoints.`
       );
     } catch (err: any) {
       error('Health Check Failed', err.message);
@@ -61,293 +69,339 @@ export const DashboardPage: React.FC = () => {
     }
   };
 
-  const recentProjects = [...projects]
-    .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
-    .slice(0, 5);
+  const categories = [
+    { label: 'All Projects', value: 'All' },
+    { label: 'Client Projects', value: 'Client Projects' },
+    { label: 'Personal & Startups', value: 'Personal Projects' },
+    { label: 'AI & Machine Learning', value: 'AI & Machine Learning' },
+  ];
 
-  const topHosting = Object.entries(stats.hostingBreakdown).sort((a, b) => b[1] - a[1]);
+  const filteredProjects = useMemo(() => {
+    return projects.filter((p) => {
+      const q = searchQuery.toLowerCase().trim();
+      const matchesSearch =
+        q === '' ||
+        p.name.toLowerCase().includes(q) ||
+        p.short_description.toLowerCase().includes(q) ||
+        (p.hosting_provider && p.hosting_provider.toLowerCase().includes(q)) ||
+        p.frontend_technologies.some((t) => t.toLowerCase().includes(q)) ||
+        p.backend_technologies.some((t) => t.toLowerCase().includes(q));
+
+      const matchesCategory =
+        selectedCategory === 'All' || p.category === selectedCategory;
+
+      const matchesStatus = liveOnly ? p.project_status === 'Live' : true;
+
+      return matchesSearch && matchesCategory && matchesStatus;
+    });
+  }, [projects, searchQuery, selectedCategory, liveOnly]);
+
+  const totalCount = projects.length;
+  const liveCount = projects.filter((p) => p.project_status === 'Live').length;
+  const inDevCount = projects.filter((p) => p.project_status === 'In Development').length;
+  const clientCount = projects.filter((p) => p.category === 'Client Projects').length;
+  const personalCount = projects.filter((p) => p.category === 'Personal Projects').length;
+  const aimlCount = projects.filter((p) => p.category === 'AI & Machine Learning').length;
 
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
-      {/* Header Banner */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 rounded-2xl bg-gradient-to-r from-card via-card/90 to-primary/5 border border-border shadow-sm">
-        <div>
+      {/* Clean Minimal Header */}
+      <div className="p-6 sm:p-8 rounded-2xl bg-card border border-border shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="space-y-2">
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-            <span className="text-xs font-semibold tracking-wider uppercase text-emerald-500">
-              System Active & Monitoring
+            <span className="w-2 h-2 rounded-full bg-emerald-500" />
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Live Projects Directory · Production Single Source of Truth
             </span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight mt-1 text-foreground">
-            Project & Deployment Vault
+
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
+            Hrishabh Gupta / ProjectVault
           </h1>
-          <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
-            Centralized hub for all personal, client, and AI/ML deployments. Automated synchronization with{' '}
+
+          <p className="text-xs sm:text-sm text-muted-foreground max-w-2xl leading-relaxed">
+            Centralized directory for all personal platforms, client solutions, and AI/ML systems. Synchronized directly with the public GitHub repository:{' '}
             <a
-              href={`https://github.com/${githubConfig.repo_owner}/${githubConfig.repo_name}`}
+              href={CANONICAL_REPO_URL}
               target="_blank"
-              rel="noreferrer"
-              className="font-mono text-indigo-500 hover:underline font-semibold"
+              rel="noopener noreferrer"
+              className="font-medium text-foreground underline hover:text-primary transition-colors inline-flex items-center gap-1"
             >
-              {githubConfig.repo_name}
+              <GithubIcon className="w-3.5 h-3.5 inline" />
+              <span>hrishabh1103/my-live-projects</span>
+              <ExternalLink className="w-3 h-3 inline text-muted-foreground" />
             </a>
-            .
           </p>
         </div>
 
-        <div className="flex items-center gap-3 shrink-0">
+        {/* Action Controls */}
+        <div className="flex items-center gap-2.5 shrink-0">
+          <a
+            href={CANONICAL_REPO_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-medium bg-secondary hover:bg-secondary/80 text-foreground border border-border transition-colors"
+          >
+            <GithubIcon className="w-3.5 h-3.5" />
+            <span>Open Repo</span>
+            <ExternalLink className="w-3 h-3 text-muted-foreground" />
+          </a>
+
           <button
             onClick={handleHealthCheckAll}
             disabled={isCheckingHealth}
-            className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-secondary hover:bg-secondary/80 text-foreground border border-border transition-all disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl text-xs font-medium bg-secondary hover:bg-secondary/80 text-foreground border border-border transition-all disabled:opacity-50"
           >
-            <Activity className={`w-4 h-4 text-emerald-500 ${isCheckingHealth ? 'animate-spin' : ''}`} />
-            <span>{isCheckingHealth ? 'Pinging...' : 'Check All URLs'}</span>
+            <Activity className={`w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 ${isCheckingHealth ? 'animate-spin' : ''}`} />
+            <span>{isCheckingHealth ? 'Checking...' : 'Ping URLs'}</span>
           </button>
 
           <button
             onClick={handleSyncAll}
             disabled={isSyncing}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-primary text-primary-foreground hover:opacity-90 shadow-md shadow-primary/25 transition-all disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-semibold bg-primary text-primary-foreground hover:opacity-90 shadow-sm transition-all disabled:opacity-50"
           >
-            <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
-            <span>{isSyncing ? 'Pushing...' : 'Sync to GitHub'}</span>
+            <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
+            <span>{isSyncing ? 'Syncing...' : 'Sync to GitHub'}</span>
           </button>
         </div>
       </div>
 
-      {/* Metric Stat Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+      {/* Real Statistics Grid (Matching hrishabh1103/my-live-projects README) */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Projects */}
-        <div className="p-5 rounded-2xl bg-card border border-border shadow-sm hover:border-primary/40 transition-colors">
-          <div className="flex items-center justify-between text-muted-foreground">
-            <span className="text-xs font-semibold uppercase tracking-wider">Total Projects</span>
-            <FolderGit2 className="w-4 h-4 text-primary" />
-          </div>
-          <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-3xl font-extrabold text-foreground">{stats.totalProjects}</span>
-            <span className="text-xs text-muted-foreground font-medium">all time</span>
-          </div>
-          <div className="mt-3 text-[11px] text-muted-foreground flex items-center gap-1 font-mono">
-            <span>{stats.categoryBreakdown['Client Projects'] || 0} client</span> ·{' '}
-            <span>{stats.categoryBreakdown['AI & Machine Learning'] || 0} AI/ML</span>
-          </div>
+        <div className="p-5 rounded-2xl bg-card border border-border shadow-sm">
+          <div className="text-xs font-medium text-muted-foreground">Total Projects</div>
+          <div className="mt-2 text-3xl font-extrabold text-foreground">{totalCount}</div>
+          <p className="text-[11px] text-muted-foreground mt-1">
+            {clientCount} client · {personalCount} personal · {aimlCount} AI/ML
+          </p>
         </div>
 
-        {/* Live Projects */}
-        <div className="p-5 rounded-2xl bg-card border border-border shadow-sm hover:border-emerald-500/40 transition-colors">
-          <div className="flex items-center justify-between text-emerald-600 dark:text-emerald-400">
-            <span className="text-xs font-semibold uppercase tracking-wider">Live & Deployed</span>
-            <CheckCircle2 className="w-4 h-4" />
+        {/* Live Deployments */}
+        <div className="p-5 rounded-2xl bg-card border border-border shadow-sm">
+          <div className="text-xs font-medium text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+            <CheckCircle2 className="w-3.5 h-3.5" /> Verified Live Deployments
           </div>
-          <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-3xl font-extrabold text-foreground">{stats.liveProjects}</span>
-            <span className="text-xs font-semibold text-emerald-500">
-              {stats.totalProjects > 0
-                ? `${Math.round((stats.liveProjects / stats.totalProjects) * 100)}%`
-                : '0%'}
-            </span>
-          </div>
-          <p className="mt-3 text-[11px] text-muted-foreground">Active public endpoints</p>
-        </div>
-
-        {/* Needs Verification */}
-        <div className="p-5 rounded-2xl bg-card border border-border shadow-sm hover:border-amber-500/40 transition-colors">
-          <div className="flex items-center justify-between text-amber-600 dark:text-amber-400">
-            <span className="text-xs font-semibold uppercase tracking-wider">Verification Req.</span>
-            <AlertTriangle className="w-4 h-4" />
-          </div>
-          <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-3xl font-extrabold text-foreground">
-              {stats.needsVerificationProjects}
-            </span>
-            <span className="text-xs text-amber-500 font-medium">pending URLs</span>
-          </div>
-          <p className="mt-3 text-[11px] text-muted-foreground">Domain or setup pending</p>
+          <div className="mt-2 text-3xl font-extrabold text-foreground">{liveCount}</div>
+          <p className="text-[11px] text-muted-foreground mt-1">
+            Active public web endpoints online
+          </p>
         </div>
 
         {/* In Development */}
-        <div className="p-5 rounded-2xl bg-card border border-border shadow-sm hover:border-blue-500/40 transition-colors">
-          <div className="flex items-center justify-between text-blue-600 dark:text-blue-400">
-            <span className="text-xs font-semibold uppercase tracking-wider">In Development</span>
-            <Clock className="w-4 h-4" />
+        <div className="p-5 rounded-2xl bg-card border border-border shadow-sm">
+          <div className="text-xs font-medium text-blue-600 dark:text-blue-400 flex items-center gap-1.5">
+            <Clock className="w-3.5 h-3.5" /> In Active Development
           </div>
-          <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-3xl font-extrabold text-foreground">
-              {stats.inDevelopmentProjects}
-            </span>
-            <span className="text-xs text-blue-500 font-medium">active code</span>
-          </div>
-          <p className="mt-3 text-[11px] text-muted-foreground">Local or staging builds</p>
+          <div className="mt-2 text-3xl font-extrabold text-foreground">{inDevCount}</div>
+          <p className="text-[11px] text-muted-foreground mt-1">
+            Local demo builds &amp; models
+          </p>
         </div>
 
-        {/* Offline Projects */}
-        <div className="p-5 rounded-2xl bg-card border border-border shadow-sm hover:border-red-500/40 transition-colors col-span-2 lg:col-span-1">
-          <div className="flex items-center justify-between text-red-600 dark:text-red-400">
-            <span className="text-xs font-semibold uppercase tracking-wider">Offline</span>
-            <Radio className="w-4 h-4" />
+        {/* Primary Hosting Platforms */}
+        <div className="p-5 rounded-2xl bg-card border border-border shadow-sm">
+          <div className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+            <Server className="w-3.5 h-3.5" /> Edge &amp; Cloud Providers
           </div>
-          <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-3xl font-extrabold text-foreground">{stats.offlineProjects}</span>
-            <span className="text-xs text-muted-foreground font-medium">unresponsive</span>
-          </div>
-          <p className="mt-3 text-[11px] text-muted-foreground">0 outages currently</p>
+          <div className="mt-2 text-xl font-bold text-foreground">Vercel &amp; Workers</div>
+          <p className="text-[11px] text-muted-foreground mt-1">
+            Vercel (8), Cloudflare (1), Custom (1), Staging (3)
+          </p>
         </div>
       </div>
 
-      {/* Grid: Recently Added & Hosting Providers */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Recently Added / Updated Projects Table */}
-        <div className="lg:col-span-2 rounded-2xl bg-card border border-border shadow-sm overflow-hidden flex flex-col">
-          <div className="p-5 border-b border-border flex items-center justify-between">
-            <div>
-              <h3 className="text-base font-bold text-foreground">Recently Active Projects</h3>
-              <p className="text-xs text-muted-foreground">
-                Projects with latest deployments or metadata updates
-              </p>
-            </div>
-            <Link
-              to="/projects"
-              className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
-            >
-              View Directory <ArrowUpRight className="w-3.5 h-3.5" />
-            </Link>
+      {/* Projects Showcase & Search */}
+      <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          {/* Category Tabs */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs">
+            {categories.map((cat) => {
+              const isSelected = selectedCategory === cat.value;
+              const count =
+                cat.value === 'All'
+                  ? projects.length
+                  : projects.filter((p) => p.category === cat.value).length;
+              return (
+                <button
+                  key={cat.value}
+                  onClick={() => setSelectedCategory(cat.value)}
+                  className={`px-3 py-1.5 rounded-lg font-medium whitespace-nowrap transition-all ${
+                    isSelected
+                      ? 'bg-slate-900 text-white dark:bg-white dark:text-zinc-900 shadow-sm'
+                      : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800'
+                  }`}
+                >
+                  {cat.label} ({count})
+                </button>
+              );
+            })}
           </div>
 
-          <div className="divide-y divide-border flex-1 overflow-x-auto">
-            {recentProjects.map((project) => (
-              <div
-                key={project.id}
-                className="p-4 flex items-center justify-between gap-4 hover:bg-secondary/40 transition-colors"
-              >
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2 flex-wrap">
+          {/* Live Only Filter */}
+          <button
+            onClick={() => setLiveOnly(!liveOnly)}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors self-start sm:self-auto ${
+              liveOnly
+                ? 'bg-emerald-50 border-emerald-300 text-emerald-800 dark:bg-emerald-950/50 dark:border-emerald-700 dark:text-emerald-300'
+                : 'bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-zinc-400 hover:bg-slate-50 dark:hover:bg-zinc-800'
+            }`}
+          >
+            <span className={`w-2 h-2 rounded-full ${liveOnly ? 'bg-emerald-600' : 'bg-slate-300 dark:bg-zinc-600'}`} />
+            <span>Live Only ({liveCount})</span>
+          </button>
+        </div>
+
+        {/* Search Bar */}
+        <div className="relative">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <input
+            type="text"
+            placeholder="Search projects by name, technology (React, Next.js, Flask, Go...), or hosting..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-2.5 rounded-xl text-xs sm:text-sm bg-card border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all shadow-sm"
+          />
+        </div>
+      </div>
+
+      {/* Projects Cards Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        {filteredProjects.map((p) => {
+          const isLive = p.project_status === 'Live';
+          const allTech = [...p.frontend_technologies, ...p.backend_technologies].slice(0, 4);
+
+          return (
+            <div
+              key={p.id}
+              className="rounded-2xl bg-card border border-border shadow-sm hover:shadow-md hover:border-slate-300 dark:hover:border-zinc-700 transition-all p-5 flex flex-col justify-between group"
+            >
+              <div className="space-y-3">
+                {/* Header Row: Title & Badges */}
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
                     <Link
-                      to={`/projects/${project.id}`}
-                      className="font-bold text-sm text-foreground hover:text-primary transition-colors truncate"
+                      to={`/projects/${p.id}`}
+                      className="font-bold text-base text-foreground group-hover:text-primary transition-colors block truncate"
                     >
-                      {project.name}
+                      {p.name}
                     </Link>
-                    <StatusBadge status={project.project_status} />
-                    <CategoryBadge category={project.category} />
+                    <div className="text-[11px] text-muted-foreground mt-0.5">
+                      {p.hosting_provider || 'Unassigned'}
+                    </div>
                   </div>
-                  <p className="text-xs text-muted-foreground truncate mt-1">
-                    {project.short_description}
-                  </p>
-                  <div className="flex items-center gap-3 mt-2 text-[11px] text-muted-foreground">
-                    <span className="font-semibold text-foreground/80 flex items-center gap-1">
-                      <Server className="w-3 h-3 text-indigo-400" />
-                      {project.hosting_provider || 'Pending'}
-                    </span>
-                    {project.live_url && (
-                      <a
-                        href={project.live_url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-primary hover:underline flex items-center gap-1 font-mono"
-                      >
-                        Visit Site <ExternalLink className="w-3 h-3" />
-                      </a>
-                    )}
-                  </div>
+
+                  <StatusBadge status={p.project_status} />
                 </div>
 
-                <div className="text-right shrink-0">
-                  <HealthBadge
-                    status={project.health_status}
-                    latency={project.last_response_time_ms}
-                    statusCode={project.last_http_status}
-                  />
-                  <div className="mt-2">
-                    <Link
-                      to={`/projects/${project.id}`}
-                      className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-secondary hover:bg-secondary/80 text-foreground border border-border inline-block"
+                {/* Description */}
+                <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+                  {p.short_description}
+                </p>
+
+                {/* Tech Stack Pills */}
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {allTech.map((tech, idx) => (
+                    <span
+                      key={idx}
+                      className="px-2 py-0.5 rounded-md text-[11px] font-medium bg-muted text-muted-foreground"
                     >
-                      Details
-                    </Link>
-                  </div>
+                      {tech}
+                    </span>
+                  ))}
+                  {p.database && (
+                    <span className="px-2 py-0.5 rounded-md text-[11px] font-medium bg-muted text-muted-foreground font-mono">
+                      {p.database.split(' ')[0]}
+                    </span>
+                  )}
                 </div>
               </div>
-            ))}
-          </div>
+
+              {/* Action Buttons Row */}
+              <div className="pt-4 mt-4 border-t border-border flex items-center justify-between gap-2 text-xs">
+                <div className="flex items-center gap-2">
+                  {p.live_url ? (
+                    <a
+                      href={p.live_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-slate-900 text-white dark:bg-white dark:text-zinc-900 font-semibold hover:opacity-90 transition-opacity"
+                    >
+                      <span>Visit Live</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  ) : (
+                    <span className="text-[11px] text-muted-foreground italic px-1">
+                      In Development
+                    </span>
+                  )}
+
+                  {p.github_repo_url && (
+                    <a
+                      href={p.github_repo_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-secondary hover:bg-secondary/80 text-foreground border border-border font-medium transition-colors"
+                      title="View source repository on GitHub"
+                    >
+                      <GithubIcon className="w-3 h-3" />
+                      <span>Code</span>
+                    </a>
+                  )}
+                </div>
+
+                <Link
+                  to={`/projects/${p.id}`}
+                  className="text-muted-foreground hover:text-foreground font-medium text-xs transition-colors"
+                >
+                  Details →
+                </Link>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {filteredProjects.length === 0 && (
+        <div className="p-12 text-center rounded-2xl bg-card border border-border">
+          <p className="text-sm font-semibold text-foreground">No projects found matching "{searchQuery}"</p>
+          <button
+            onClick={() => {
+              setSearchQuery('');
+              setSelectedCategory('All');
+              setLiveOnly(false);
+            }}
+            className="mt-3 text-xs text-primary font-medium hover:underline"
+          >
+            Clear all filters
+          </button>
         </div>
+      )}
 
-        {/* Right Column: Hosting Platforms & GitHub Sync Feed */}
-        <div className="space-y-6">
-          {/* Hosting Platforms Breakdown */}
-          <div className="p-5 rounded-2xl bg-card border border-border shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-base font-bold text-foreground flex items-center gap-2">
-                <Server className="w-4 h-4 text-indigo-500" />
-                Hosting Platforms
-              </h3>
-              <span className="text-xs text-muted-foreground font-mono">
-                {topHosting.length} platforms
-              </span>
-            </div>
-
-            <div className="space-y-3">
-              {topHosting.map(([host, count]) => {
-                const percentage = Math.round((count / stats.totalProjects) * 100);
-                return (
-                  <div key={host} className="space-y-1">
-                    <div className="flex justify-between text-xs">
-                      <span className="font-medium text-foreground">{host}</span>
-                      <span className="text-muted-foreground font-mono">
-                        {count} ({percentage}%)
-                      </span>
-                    </div>
-                    <div className="h-2 w-full rounded-full bg-secondary overflow-hidden">
-                      <div
-                        className="h-full bg-gradient-to-r from-indigo-500 to-violet-500 rounded-full transition-all duration-500"
-                        style={{ width: `${percentage}%` }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+      {/* GitHub Sync Status Card */}
+      <div className="p-6 rounded-2xl bg-card border border-border shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-secondary text-foreground flex items-center justify-center shrink-0">
+            <GitBranch className="w-5 h-5" />
           </div>
-
-          {/* GitHub Sync Status Card */}
-          <div className="p-5 rounded-2xl bg-gradient-to-br from-card to-secondary/30 border border-border shadow-sm">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-base font-bold text-foreground flex items-center gap-2">
-                <GitBranch className="w-4 h-4 text-indigo-500" />
-                GitHub Directory
-              </h3>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
-                ACTIVE REPO
-              </span>
-            </div>
-
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Every change made in ProjectVault is automatically translated into structured markdown files
-              and published directly to:
+          <div>
+            <h3 className="text-sm font-semibold text-foreground">
+              Repository Sync Target: hrishabh1103/my-live-projects
+            </h3>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Branch: <span className="font-mono text-foreground font-medium">main</span> · Tracks {projects.length} specifications in <code className="text-foreground">projects/</code>
             </p>
-
-            <div className="my-3 p-3 rounded-xl bg-background/80 border border-border font-mono text-xs text-foreground flex items-center justify-between">
-              <span className="truncate">
-                {githubConfig.repo_owner}/{githubConfig.repo_name}
-              </span>
-              <a
-                href={`https://github.com/${githubConfig.repo_owner}/${githubConfig.repo_name}`}
-                target="_blank"
-                rel="noreferrer"
-                className="text-indigo-500 hover:text-indigo-400 p-1"
-              >
-                <ExternalLink className="w-3.5 h-3.5" />
-              </a>
-            </div>
-
-            <div className="flex items-center justify-between pt-2 border-t border-border/60 text-xs">
-              <span className="text-muted-foreground">Recent Sync Activity:</span>
-              <Link to="/github-sync" className="font-semibold text-primary hover:underline">
-                View Logs ({syncLogs.length}) →
-              </Link>
-            </div>
           </div>
         </div>
+
+        <Link
+          to="/github-sync"
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold bg-secondary hover:bg-secondary/80 text-foreground border border-border transition-colors self-start sm:self-auto"
+        >
+          <span>View Sync Logs</span>
+          <ArrowRight className="w-3.5 h-3.5" />
+        </Link>
       </div>
     </div>
   );

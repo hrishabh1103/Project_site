@@ -32,6 +32,8 @@ interface ProjectContextType {
   getProjectChecks: (projectId: string) => Promise<DeploymentCheck[]>;
 }
 
+const CURRENT_STORAGE_VERSION = 'pv_v3_hrishabh1103_projects13';
+
 const DEFAULT_GITHUB_CONFIG: GitHubConfig = {
   repo_owner: 'hrishabh1103',
   repo_name: 'my-live-projects',
@@ -46,14 +48,23 @@ const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
 
 export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [projects, setProjects] = useState<Project[]>(() => {
-    const saved = localStorage.getItem('projectvault_projects');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      } catch (e) {
-        console.error('Failed to parse saved projects', e);
+    try {
+      const storedVersion = localStorage.getItem('projectvault_storage_version');
+      if (storedVersion !== CURRENT_STORAGE_VERSION) {
+        // Wipe stale mock caches from previous development runs
+        localStorage.removeItem('projectvault_projects');
+        localStorage.removeItem('projectvault_github_config');
+        localStorage.removeItem('projectvault_sync_logs');
+        localStorage.setItem('projectvault_storage_version', CURRENT_STORAGE_VERSION);
+        return INITIAL_PROJECTS;
       }
+      const saved = localStorage.getItem('projectvault_projects');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length === 13) return parsed;
+      }
+    } catch (e) {
+      console.error('Failed to parse saved projects', e);
     }
     return INITIAL_PROJECTS;
   });
@@ -106,15 +117,17 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
   });
 
   const [githubConfig, setGithubConfig] = useState<GitHubConfig>(() => {
-    const saved = localStorage.getItem('projectvault_github_config');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch {
-        // fallback
+    const fallback = { ...DEFAULT_GITHUB_CONFIG };
+    try {
+      const saved = localStorage.getItem('projectvault_github_config');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.repo_owner && parsed.repo_owner === 'hrishabh1103') {
+          return { ...fallback, ...parsed };
+        }
       }
-    }
-    return DEFAULT_GITHUB_CONFIG;
+    } catch {}
+    return fallback;
   });
 
   // Save to localStorage whenever state changes
