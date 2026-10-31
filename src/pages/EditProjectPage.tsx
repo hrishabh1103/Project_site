@@ -19,7 +19,7 @@ import { TagInput } from '../components/ui/TagInput';
 export const EditProjectPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { getProject, updateProject, githubConfig } = useProjects();
-  const { success, error } = useToast();
+  const { success, error, warning } = useToast();
   const navigate = useNavigate();
 
   const project = id ? getProject(id) : undefined;
@@ -139,12 +139,19 @@ export const EditProjectPage: React.FC = () => {
       const res = await updateProject(project.id, updates, shouldSyncToGithub);
 
       if (res.success && res.project) {
-        success(
-          'Project Updated',
-          shouldSyncToGithub
-            ? `Updated ${name} and synchronized changes to GitHub (${githubConfig.repo_name})!`
-            : `Project ${name} updated successfully!`
-        );
+        if (shouldSyncToGithub && res.error) {
+          warning(
+            'Updated in ProjectVault (GitHub Sync Pending)',
+            `Project was updated in dashboard, but GitHub push was skipped: ${res.error}`
+          );
+        } else {
+          success(
+            'Project Updated',
+            shouldSyncToGithub
+              ? `Updated ${name} and synchronized changes to GitHub (${githubConfig.repo_name})!`
+              : `Project ${name} updated successfully!`
+          );
+        }
         navigate(`/projects/${project.id}`);
       } else {
         error('Update Failed', res.error || 'Failed to update project');
@@ -461,6 +468,20 @@ export const EditProjectPage: React.FC = () => {
             className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-secondary/60 border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 focus:bg-background transition-all"
           />
         </div>
+
+        {/* GitHub Token Notice if not configured */}
+        {!githubConfig.access_token && (
+          <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 text-xs text-amber-800 dark:text-amber-300 flex items-start gap-3">
+            <GitBranch className="w-4 h-4 shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <span className="font-semibold block">GitHub Token needed for automatic repo pushes:</span>
+              <p className="leading-relaxed">
+                To allow ProjectVault to push commits directly to <strong>{githubConfig.repo_owner}/{githubConfig.repo_name}</strong> on GitHub, please enter your GitHub Personal Access Token (PAT) in{' '}
+                <Link to="/settings" className="underline font-semibold hover:opacity-80">Settings</Link> or in <code className="font-mono bg-amber-100 dark:bg-amber-900/60 px-1 py-0.5 rounded">.env</code>.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Action Buttons */}
         <div className="pt-6 border-t border-border flex flex-col sm:flex-row items-center justify-end gap-3">

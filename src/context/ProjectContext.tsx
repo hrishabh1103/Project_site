@@ -554,7 +554,14 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setProjects((prev) => [newProject, ...prev]);
 
       if (syncToGithub) {
-        await syncProjectToGithub(newProject);
+        const syncRes = await syncProjectToGithub(newProject);
+        if (!syncRes.success) {
+          return {
+            success: true,
+            project: newProject,
+            error: syncRes.error || 'Failed to sync to GitHub',
+          };
+        }
       }
 
       return { success: true, project: newProject };
@@ -591,7 +598,14 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setProjects((prev) => prev.map((p) => (p.id === id ? updated : p)));
 
       if (syncToGithub) {
-        await syncProjectToGithub(updated);
+        const syncRes = await syncProjectToGithub(updated);
+        if (!syncRes.success) {
+          return {
+            success: true,
+            project: updated,
+            error: syncRes.error || 'Failed to sync to GitHub',
+          };
+        }
       }
 
       return { success: true, project: updated };

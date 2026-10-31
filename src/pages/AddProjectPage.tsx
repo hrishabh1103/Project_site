@@ -17,8 +17,8 @@ import { ProjectCategory, ProjectStatus } from '../types';
 import { TagInput } from '../components/ui/TagInput';
 
 export const AddProjectPage: React.FC = () => {
-  const { createProject } = useProjects();
-  const { success, error } = useToast();
+  const { createProject, githubConfig } = useProjects();
+  const { success, error, warning } = useToast();
   const navigate = useNavigate();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -111,12 +111,19 @@ export const AddProjectPage: React.FC = () => {
       const res = await createProject(projectPayload, shouldSyncToGithub);
 
       if (res.success && res.project) {
-        success(
-          'Project Saved',
-          shouldSyncToGithub
-            ? `Saved ${name} and synchronized markdown to GitHub repository!`
-            : `Project ${name} created successfully!`
-        );
+        if (shouldSyncToGithub && res.error) {
+          warning(
+            'Saved in ProjectVault (GitHub Sync Pending)',
+            `Project was saved in the dashboard, but GitHub push was skipped: ${res.error}`
+          );
+        } else {
+          success(
+            'Project Saved',
+            shouldSyncToGithub
+              ? `Saved ${name} and synchronized markdown to GitHub repository!`
+              : `Project ${name} created successfully!`
+          );
+        }
         navigate(`/projects/${res.project.id}`);
       } else {
         error('Save Failed', res.error || 'Failed to create project');
@@ -490,6 +497,20 @@ export const AddProjectPage: React.FC = () => {
           />
         </div>
 
+        {/* GitHub Token Notice if not configured */}
+        {!githubConfig.access_token && (
+          <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 text-xs text-amber-800 dark:text-amber-300 flex items-start gap-3">
+            <GitBranch className="w-4 h-4 shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <span className="font-semibold block">GitHub Token needed for automatic repo pushes:</span>
+              <p className="leading-relaxed">
+                To allow ProjectVault to push commits directly to <strong>{githubConfig.repo_owner}/{githubConfig.repo_name}</strong> on GitHub, please enter your GitHub Personal Access Token (PAT) in{' '}
+                <Link to="/settings" className="underline font-semibold hover:opacity-80">Settings</Link> or in <code className="font-mono bg-amber-100 dark:bg-amber-900/60 px-1 py-0.5 rounded">.env</code>. You can still save the project right now!
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Action Buttons: Save vs Save & Sync to GitHub */}
         <div className="pt-6 border-t border-border flex flex-col sm:flex-row items-center justify-end gap-3">
           <Link
@@ -507,7 +528,7 @@ export const AddProjectPage: React.FC = () => {
             className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-semibold bg-secondary hover:bg-secondary/80 text-foreground border border-border shadow-sm transition-all disabled:opacity-50"
           >
             <Save className="w-4 h-4 text-muted-foreground" />
-            <span>{isSubmitting && !syncOnSave ? 'Saving...' : 'Save Project'}</span>
+            <span>{isSubmitting && !syncOnSave ? 'Saving...' : 'Save Project (Local Only)'}</span>
           </button>
 
           {/* Button 2: Save & Sync to GitHub */}
