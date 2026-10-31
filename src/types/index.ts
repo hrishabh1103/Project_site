@@ -95,3 +95,4 @@ export interface DashboardStats {
   hostingBreakdown: Record<string, number>;
   categoryBreakdown: Record<string, number>;
 }
+

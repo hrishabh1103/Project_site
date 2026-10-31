@@ -1,92 +1,78 @@
 import React, { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  FolderGit2,
-  Plus,
   Search,
-  Grid,
-  List,
   ExternalLink,
   Server,
-  Activity,
-  Trash2,
+  Plus,
   Edit,
+  Trash2,
+  CheckCircle2,
+  Layers,
+  Sparkles,
+  ArrowRight,
+  Filter,
 } from 'lucide-react';
 import { useProjects } from '../context/ProjectContext';
-import { useToast } from '../context/ToastContext';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import { StatusBadge } from '../components/ui/StatusBadge';
-import { HealthBadge } from '../components/ui/HealthBadge';
 import { CategoryBadge } from '../components/ui/CategoryBadge';
 import { GithubIcon } from '../components/ui/GithubIcon';
+import { Project } from '../types';
 
 export const ProjectsPage: React.FC = () => {
-  const { projects, deleteProject, checkProjectHealth } = useProjects();
-  const { success, error } = useToast();
+  const { projects, deleteProject } = useProjects();
   const { isAuthenticated } = useAuth();
+  const { success, error } = useToast();
   const navigate = useNavigate();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
-  const [selectedStatus, setSelectedStatus] = useState<string>('All');
-  const [selectedHosting, setSelectedHosting] = useState<string>('All');
-  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
+  const [liveOnly, setLiveOnly] = useState<boolean>(false);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
-  const categories: string[] = [
-    'All',
-    'Client Projects',
-    'Personal Projects',
-    'AI & Machine Learning',
-    'Web Applications',
-    'Mobile Applications',
-    'Experimental Projects',
-    'Academic Projects',
+  const categories = [
+    { label: 'All Projects', value: 'All' },
+    { label: 'Client Work', value: 'Client Projects' },
+    { label: 'Personal & Startups', value: 'Personal Projects' },
+    { label: 'AI & Machine Learning', value: 'AI & Machine Learning' },
   ];
 
-  const statuses: string[] = ['All', 'Live', 'Needs Verification', 'In Development', 'Offline', 'Archived'];
-
-  const hostingProviders = useMemo(() => {
-    const set = new Set<string>();
-    projects.forEach((p) => {
-      if (p.hosting_provider) set.add(p.hosting_provider);
-    });
-    return ['All', ...Array.from(set)];
-  }, [projects]);
+  const totalCount = projects.length;
+  const liveCount = projects.filter((p) => p.project_status === 'Live').length;
+  const inDevCount = projects.filter((p) => p.project_status === 'In Development').length;
 
   const filteredProjects = useMemo(() => {
     return projects.filter((p) => {
+      const q = searchQuery.toLowerCase().trim();
       const matchesSearch =
-        searchQuery === '' ||
-        p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.slug.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.short_description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.frontend_technologies.some((t: string) => t.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        p.backend_technologies.some((t: string) => t.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (p.hosting_provider && p.hosting_provider.toLowerCase().includes(searchQuery.toLowerCase()));
+        q === '' ||
+        p.name.toLowerCase().includes(q) ||
+        p.short_description.toLowerCase().includes(q) ||
+        (p.hosting_provider && p.hosting_provider.toLowerCase().includes(q)) ||
+        p.frontend_technologies.some((t) => t.toLowerCase().includes(q)) ||
+        p.backend_technologies.some((t) => t.toLowerCase().includes(q));
 
-      const matchesCategory = selectedCategory === 'All' || p.category === selectedCategory;
-      const matchesStatus = selectedStatus === 'All' || p.project_status === selectedStatus;
-      const matchesHosting = selectedHosting === 'All' || p.hosting_provider === selectedHosting;
+      const matchesCategory =
+        selectedCategory === 'All' || p.category === selectedCategory;
 
-      return matchesSearch && matchesCategory && matchesStatus && matchesHosting;
+      const matchesStatus = liveOnly ? p.project_status === 'Live' : true;
+
+      return matchesSearch && matchesCategory && matchesStatus;
     });
-  }, [projects, searchQuery, selectedCategory, selectedStatus, selectedHosting]);
+  }, [projects, searchQuery, selectedCategory, liveOnly]);
 
   const handleDelete = async (id: string, name: string) => {
-    if (!isAuthenticated) {
-      navigate('/login');
-      return;
-    }
-
-    if (window.confirm(`Are you sure you want to delete "${name}"? This can optionally remove it from GitHub as well.`)) {
+    if (!isAuthenticated) return;
+    if (window.confirm(`Are you sure you want to remove ${name}?`)) {
       setIsDeleting(id);
       try {
         const res = await deleteProject(id, true);
         if (res.success) {
-          success('Project Deleted', `Removed ${name} and updated GitHub directory.`);
+          success('Removed', `Project ${name} removed.`);
         } else {
-          error('Delete Failed', res.error || 'Could not delete project');
+          error('Error', res.error || 'Failed to remove project');
         }
       } finally {
         setIsDeleting(null);
@@ -94,363 +80,240 @@ export const ProjectsPage: React.FC = () => {
     }
   };
 
-  const handleHealthCheck = async (id: string) => {
-    const res = await checkProjectHealth(id);
-    if (res.success) {
-      success('Health Checked', `Response: HTTP ${res.status} in ${res.responseTime}ms`);
-    } else {
-      error('Health Check Error', res.error || 'Failed to ping project');
-    }
-  };
-
   return (
-    <div className="space-y-6 animate-in fade-in duration-300">
-      {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight">
-            Projects Directory
+    <div className="space-y-10 animate-in fade-in duration-300">
+      {/* Hero Header (Clean, Minimal, Recruiter-Friendly) */}
+      <div className="space-y-4 pt-2">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 text-xs font-medium">
+          <span className="w-2 h-2 rounded-full bg-emerald-500" />
+          <span>Active Deployments &amp; Portfolio</span>
+        </div>
+
+        <div className="space-y-2">
+          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 dark:text-white">
+            Projects &amp; Deployments
           </h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            Manage, filter, inspect, and deploy your software catalog ({filteredProjects.length} of {projects.length} displayed)
+          <p className="text-base text-slate-600 dark:text-zinc-400 max-w-2xl leading-relaxed">
+            A curated directory of live web applications, client solutions, and AI/ML systems built by Hrishabh Gupta. All deployments are continuously monitored for uptime.
           </p>
         </div>
 
-        <Link
-          to="/projects/new"
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground font-semibold text-xs shadow-md shadow-primary/25 hover:opacity-90 transition-all self-start sm:self-auto"
-        >
-          <Plus className="w-4 h-4" />
-          <span>New Project</span>
-        </Link>
-      </div>
-
-      {/* Filter Bar & Search */}
-      <div className="p-4 rounded-2xl bg-card border border-border shadow-sm space-y-4">
-        <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
-          {/* Search */}
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Search by name, technology, description, or host..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 rounded-xl text-xs bg-secondary/60 border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 focus:bg-background transition-all"
-            />
+        {/* Quick Summary Counter Pills */}
+        <div className="flex items-center gap-3 pt-1 text-xs text-slate-600 dark:text-zinc-400 flex-wrap">
+          <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-slate-50 dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 font-medium">
+            <span className="font-semibold text-slate-900 dark:text-white">{totalCount}</span> Total Projects
           </div>
 
-          {/* Controls: Status, Host, View toggle */}
-          <div className="flex items-center gap-2 flex-wrap">
-            {/* Status Select */}
-            <select
-              value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
-              className="px-3 py-2 rounded-xl text-xs bg-secondary/60 border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
-            >
-              {statuses.map((s) => (
-                <option key={s} value={s}>
-                  Status: {s}
-                </option>
-              ))}
-            </select>
-
-            {/* Hosting Select */}
-            <select
-              value={selectedHosting}
-              onChange={(e) => setSelectedHosting(e.target.value)}
-              className="px-3 py-2 rounded-xl text-xs bg-secondary/60 border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
-            >
-              {hostingProviders.map((h) => (
-                <option key={h} value={h}>
-                  Host: {h}
-                </option>
-              ))}
-            </select>
-
-            {/* View Mode Toggle */}
-            <div className="flex items-center border border-border rounded-xl p-0.5 bg-secondary/60">
-              <button
-                onClick={() => setViewMode('grid')}
-                className={`p-1.5 rounded-lg text-xs font-medium transition-all ${
-                  viewMode === 'grid'
-                    ? 'bg-card text-foreground shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-                title="Grid View"
-              >
-                <Grid className="w-3.5 h-3.5" />
-              </button>
-              <button
-                onClick={() => setViewMode('table')}
-                className={`p-1.5 rounded-lg text-xs font-medium transition-all ${
-                  viewMode === 'table'
-                    ? 'bg-card text-foreground shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-                title="Table View"
-              >
-                <List className="w-3.5 h-3.5" />
-              </button>
-            </div>
+          <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-800/40 text-emerald-700 dark:text-emerald-400 font-medium">
+            <span className="w-2 h-2 rounded-full bg-emerald-500" />
+            <span className="font-semibold">{liveCount}</span> Live Online
           </div>
-        </div>
 
-        {/* Category Pill Filters */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 pt-1 no-scrollbar text-xs">
-          {categories.map((cat) => {
-            const isSelected = selectedCategory === cat;
-            return (
-              <button
-                key={cat}
-                onClick={() => setSelectedCategory(cat)}
-                className={`px-3 py-1.5 rounded-xl font-semibold whitespace-nowrap transition-all ${
-                  isSelected
-                    ? 'bg-primary text-primary-foreground shadow-sm'
-                    : 'bg-secondary/50 text-muted-foreground hover:text-foreground hover:bg-secondary'
-                }`}
-              >
-                {cat}
-              </button>
-            );
-          })}
+          <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-blue-50/60 dark:bg-blue-950/30 border border-blue-200/80 dark:border-blue-800/40 text-blue-700 dark:text-blue-400 font-medium">
+            <span className="w-2 h-2 rounded-full bg-blue-500" />
+            <span className="font-semibold">{inDevCount}</span> In Development
+          </div>
         </div>
       </div>
 
-      {/* Projects Display */}
+      {/* Filter and Search Bar (Clean & Accessible) */}
+      <div className="space-y-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          {/* Category Tabs */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs">
+            {categories.map((cat) => {
+              const isSelected = selectedCategory === cat.value;
+              const count =
+                cat.value === 'All'
+                  ? projects.length
+                  : projects.filter((p) => p.category === cat.value).length;
+              return (
+                <button
+                  key={cat.value}
+                  onClick={() => setSelectedCategory(cat.value)}
+                  className={`px-3 py-1.5 rounded-lg font-medium whitespace-nowrap transition-all ${
+                    isSelected
+                      ? 'bg-slate-900 text-white dark:bg-white dark:text-zinc-900 shadow-sm'
+                      : 'text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800'
+                  }`}
+                >
+                  {cat.label} ({count})
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Live Only Filter Toggle */}
+          <button
+            onClick={() => setLiveOnly(!liveOnly)}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors self-start sm:self-auto ${
+              liveOnly
+                ? 'bg-emerald-50 border-emerald-300 text-emerald-800 dark:bg-emerald-950/50 dark:border-emerald-700 dark:text-emerald-300'
+                : 'bg-white dark:bg-zinc-900 border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-zinc-400 hover:bg-slate-50 dark:hover:bg-zinc-800'
+            }`}
+          >
+            <span className={`w-2 h-2 rounded-full ${liveOnly ? 'bg-emerald-600' : 'bg-slate-300 dark:bg-zinc-600'}`} />
+            <span>Show Live Only</span>
+          </button>
+        </div>
+
+        {/* Search Input */}
+        <div className="relative">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Search by project name, tech stack (e.g. Next.js, Supabase, Python), or keywords..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-2.5 rounded-xl text-sm bg-slate-50 dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-slate-400 dark:focus:ring-zinc-600 focus:bg-white dark:focus:bg-zinc-900 transition-all"
+          />
+        </div>
+      </div>
+
+      {/* Projects Grid */}
       {filteredProjects.length === 0 ? (
-        <div className="p-12 text-center rounded-2xl bg-card border border-dashed border-border">
-          <FolderGit2 className="w-12 h-12 text-muted-foreground mx-auto mb-3 opacity-40" />
-          <h3 className="text-base font-bold text-foreground">No projects match your filter</h3>
-          <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
-            Try adjusting your search terms, status, or category filters to find the project you are looking for.
+        <div className="p-12 text-center rounded-2xl border border-dashed border-slate-200 dark:border-zinc-800 space-y-3">
+          <Layers className="w-8 h-8 text-slate-300 dark:text-zinc-700 mx-auto" />
+          <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+            No projects found
+          </h3>
+          <p className="text-xs text-slate-500 dark:text-zinc-400 max-w-sm mx-auto">
+            Try adjusting your search terms or turning off the "Show Live Only" filter.
           </p>
           <button
             onClick={() => {
               setSearchQuery('');
               setSelectedCategory('All');
-              setSelectedStatus('All');
-              setSelectedHosting('All');
+              setLiveOnly(false);
             }}
-            className="mt-4 px-4 py-2 text-xs font-semibold rounded-xl bg-secondary hover:bg-secondary/80 text-foreground transition-all"
+            className="px-3.5 py-1.5 rounded-lg text-xs font-medium bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 hover:bg-slate-200 dark:hover:bg-zinc-700"
           >
             Reset Filters
           </button>
         </div>
-      ) : viewMode === 'grid' ? (
-        /* GRID VIEW */
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {filteredProjects.map((project) => (
             <div
               key={project.id}
-              className="rounded-2xl bg-card border border-border shadow-sm hover:shadow-md hover:border-primary/40 transition-all flex flex-col justify-between group overflow-hidden"
+              className="group p-5 rounded-2xl bg-white dark:bg-zinc-900/70 border border-slate-200/80 dark:border-zinc-800 hover:border-slate-300 dark:hover:border-zinc-700 shadow-sm hover:shadow transition-all flex flex-col justify-between"
             >
-              <div>
-                {/* Screenshot / Header thumbnail if available */}
-                {project.screenshots && project.screenshots.length > 0 && (
-                  <div className="h-36 w-full overflow-hidden bg-secondary relative">
-                    <img
-                      src={project.screenshots[0]}
-                      alt={project.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-card via-transparent to-transparent opacity-80" />
-                  </div>
-                )}
+              <div className="space-y-3">
+                {/* Category & Status Row */}
+                <div className="flex items-center justify-between gap-2">
+                  <CategoryBadge category={project.category} />
+                  <StatusBadge status={project.project_status} />
+                </div>
 
-                <div className="p-5">
-                  {/* Category & Status */}
-                  <div className="flex items-center justify-between gap-2 flex-wrap mb-2">
-                    <CategoryBadge category={project.category} />
-                    <StatusBadge status={project.project_status} />
-                  </div>
-
-                  {/* Title & Slug */}
+                {/* Title & Description */}
+                <div>
                   <Link
                     to={`/projects/${project.id}`}
-                    className="block text-base font-bold text-foreground hover:text-primary transition-colors mt-2"
+                    className="text-lg font-bold text-slate-900 dark:text-white group-hover:text-primary transition-colors block"
                   >
                     {project.name}
                   </Link>
 
-                  <p className="text-xs text-muted-foreground mt-2 line-clamp-2 leading-relaxed">
+                  <p className="text-xs sm:text-sm text-slate-600 dark:text-zinc-400 mt-1.5 leading-relaxed line-clamp-2">
                     {project.short_description}
                   </p>
-
-                  {/* Tech stack tags */}
-                  <div className="mt-4 flex flex-wrap gap-1.5">
-                    {[...project.frontend_technologies, ...project.backend_technologies]
-                      .slice(0, 4)
-                      .map((t) => (
-                        <span
-                          key={t}
-                          className="px-2 py-0.5 rounded-md text-[11px] font-mono bg-secondary text-secondary-foreground"
-                        >
-                          {t}
-                        </span>
-                      ))}
-                    {[...project.frontend_technologies, ...project.backend_technologies].length > 4 && (
-                      <span className="px-1.5 py-0.5 rounded-md text-[10px] font-mono text-muted-foreground">
-                        +{[...project.frontend_technologies, ...project.backend_technologies].length - 4} more
-                      </span>
-                    )}
-                  </div>
                 </div>
-              </div>
 
-              {/* Card Footer */}
-              <div className="p-4 border-t border-border/70 bg-secondary/20 flex items-center justify-between gap-2">
-                <div className="flex items-center gap-1.5">
-                  <HealthBadge
-                    status={project.health_status}
-                    latency={project.last_response_time_ms}
-                  />
-                  {project.live_url && (
-                    <button
-                      onClick={() => handleHealthCheck(project.id)}
-                      className="p-1 rounded text-muted-foreground hover:text-foreground"
-                      title="Ping endpoint now"
-                    >
-                      <Activity className="w-3.5 h-3.5" />
-                    </button>
+                {/* Tech Stack Pills */}
+                <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                  {[...project.frontend_technologies, ...project.backend_technologies]
+                    .slice(0, 4)
+                    .map((tech) => (
+                      <span
+                        key={tech}
+                        className="px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300"
+                      >
+                        {tech}
+                      </span>
+                    ))}
+                  {[...project.frontend_technologies, ...project.backend_technologies].length > 4 && (
+                    <span className="text-[11px] text-slate-400 dark:text-zinc-500 font-medium px-1">
+                      +{[...project.frontend_technologies, ...project.backend_technologies].length - 4} more
+                    </span>
                   )}
                 </div>
 
-                <div className="flex items-center gap-1">
-                  {project.live_url && (
+                {/* Hosting & Domain metadata */}
+                {project.hosting_provider && (
+                  <div className="flex items-center gap-1.5 text-xs text-slate-400 dark:text-zinc-500 pt-1">
+                    <Server className="w-3.5 h-3.5" />
+                    <span>Hosted on <strong>{project.hosting_provider}</strong></span>
+                  </div>
+                )}
+              </div>
+
+              {/* Action Buttons (Clear, Obvious, Recruiter-Friendly) */}
+              <div className="pt-4 mt-4 border-t border-slate-100 dark:border-zinc-800/80 flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  {/* Primary CTA: Visit Live Site */}
+                  {project.live_url ? (
                     <a
                       href={project.live_url}
                       target="_blank"
                       rel="noreferrer"
-                      className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
-                      title="Open Live Site"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-900 text-white dark:bg-white dark:text-zinc-900 hover:opacity-90 transition-opacity shadow-sm"
                     >
-                      <ExternalLink className="w-4 h-4" />
+                      <span>Visit Live App</span>
+                      <ExternalLink className="w-3.5 h-3.5" />
                     </a>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium text-slate-400 dark:text-zinc-500 bg-slate-50 dark:bg-zinc-800/50">
+                      Local / In Dev
+                    </span>
                   )}
 
+                  {/* Secondary CTA: GitHub Repo */}
                   {project.github_repo_url && (
                     <a
                       href={project.github_repo_url}
                       target="_blank"
                       rel="noreferrer"
-                      className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
-                      title="GitHub Repository"
+                      className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
+                      title="View GitHub Repository"
                     >
-                      <GithubIcon className="w-4 h-4" />
+                      <GithubIcon className="w-3.5 h-3.5" />
+                      <span>Code</span>
                     </a>
                   )}
+                </div>
 
+                {/* Details link & Admin controls */}
+                <div className="flex items-center gap-1">
                   <Link
-                    to={`/projects/${project.id}/edit`}
-                    className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
-                    title="Edit Project"
+                    to={`/projects/${project.id}`}
+                    className="px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
                   >
-                    <Edit className="w-4 h-4" />
+                    Details →
                   </Link>
 
-                  <button
-                    onClick={() => handleDelete(project.id, project.name)}
-                    disabled={isDeleting === project.id}
-                    className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-                    title="Delete Project"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  {isAuthenticated && (
+                    <>
+                      <Link
+                        to={`/projects/${project.id}/edit`}
+                        className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-zinc-200 rounded-md"
+                        title="Edit Project"
+                      >
+                        <Edit className="w-3.5 h-3.5" />
+                      </Link>
+                      <button
+                        onClick={() => handleDelete(project.id, project.name)}
+                        disabled={isDeleting === project.id}
+                        className="p-1.5 text-slate-400 hover:text-rose-600 rounded-md"
+                        title="Delete Project"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
           ))}
-        </div>
-      ) : (
-        /* TABLE VIEW */
-        <div className="rounded-2xl bg-card border border-border shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-secondary/60 border-b border-border text-muted-foreground font-semibold uppercase tracking-wider">
-                <tr>
-                  <th className="p-4">Project</th>
-                  <th className="p-4">Category</th>
-                  <th className="p-4">Status</th>
-                  <th className="p-4">Hosting</th>
-                  <th className="p-4">Health</th>
-                  <th className="p-4">Links</th>
-                  <th className="p-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {filteredProjects.map((p) => (
-                  <tr key={p.id} className="hover:bg-secondary/30 transition-colors">
-                    <td className="p-4">
-                      <Link
-                        to={`/projects/${p.id}`}
-                        className="font-bold text-foreground hover:text-primary transition-colors block text-sm"
-                      >
-                        {p.name}
-                      </Link>
-                      <span className="text-[11px] text-muted-foreground font-mono">
-                        {p.slug}
-                      </span>
-                    </td>
-                    <td className="p-4">
-                      <CategoryBadge category={p.category} />
-                    </td>
-                    <td className="p-4">
-                      <StatusBadge status={p.project_status} />
-                    </td>
-                    <td className="p-4 font-medium text-foreground">
-                      {p.hosting_provider || 'Pending'}
-                    </td>
-                    <td className="p-4">
-                      <HealthBadge
-                        status={p.health_status}
-                        latency={p.last_response_time_ms}
-                        statusCode={p.last_http_status}
-                      />
-                    </td>
-                    <td className="p-4">
-                      <div className="flex items-center gap-2">
-                        {p.live_url ? (
-                          <a
-                            href={p.live_url}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-primary hover:underline font-mono inline-flex items-center gap-1"
-                          >
-                            Live <ExternalLink className="w-3 h-3" />
-                          </a>
-                        ) : (
-                          <span className="text-muted-foreground italic">None</span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="p-4 text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <Link
-                          to={`/projects/${p.id}`}
-                          className="px-2.5 py-1 rounded-lg bg-secondary hover:bg-secondary/80 text-foreground font-semibold"
-                        >
-                          View
-                        </Link>
-                        <Link
-                          to={`/projects/${p.id}/edit`}
-                          className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary"
-                        >
-                          <Edit className="w-3.5 h-3.5" />
-                        </Link>
-                        <button
-                          onClick={() => handleDelete(p.id, p.name)}
-                          className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
         </div>
       )}
     </div>

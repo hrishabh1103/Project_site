@@ -20,12 +20,12 @@ export const SettingsPage: React.FC = () => {
   const { githubConfig, updateGithubConfig } = useProjects();
   const { success, error } = useToast();
 
-  const [repoOwner, setRepoOwner] = useState(githubConfig.repo_owner);
-  const [repoName, setRepoName] = useState(githubConfig.repo_name);
-  const [branch, setBranch] = useState(githubConfig.branch);
+  const [repoOwner, setRepoOwner] = useState(githubConfig.repo_owner || 'hrishabh1103');
+  const [repoName, setRepoName] = useState(githubConfig.repo_name || 'my-live-projects');
+  const [branch, setBranch] = useState(githubConfig.branch || 'main');
   const [token, setToken] = useState(githubConfig.access_token || '');
-  const [authorName, setAuthorName] = useState(githubConfig.author_name);
-  const [authorEmail, setAuthorEmail] = useState(githubConfig.author_email);
+  const [authorName, setAuthorName] = useState(githubConfig.author_name || 'Hrishabh Gupta');
+  const [authorEmail, setAuthorEmail] = useState(githubConfig.author_email || 'hrishabh1104@gmail.com');
 
   const [isTesting, setIsTesting] = useState(false);
   const [testResult, setTestResult] = useState<{
@@ -160,18 +160,18 @@ CREATE POLICY "Authenticated users write access" ON public.projects FOR ALL TO a
       <div className="p-6 sm:p-8 rounded-2xl bg-card border border-border shadow-sm space-y-6">
         <div className="flex items-center justify-between pb-4 border-b border-border">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center border border-border">
-              <GitBranch className="w-5 h-5 text-indigo-400" />
+            <div className="w-10 h-10 rounded-xl bg-secondary text-foreground flex items-center justify-center border border-border">
+              <GitBranch className="w-5 h-5 text-foreground" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-foreground">GitHub Repository Integration</h2>
+              <h2 className="text-base font-semibold text-foreground">GitHub Repository Integration</h2>
               <p className="text-xs text-muted-foreground">
                 Automatic synchronization target for your project markdown documents
               </p>
             </div>
           </div>
-          <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
-            CRITICAL
+          <span className="text-[11px] font-medium px-2.5 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">
+            Main Directory
           </span>
         </div>
 
@@ -319,21 +319,21 @@ CREATE POLICY "Authenticated users write access" ON public.projects FOR ALL TO a
       <div className="p-6 sm:p-8 rounded-2xl bg-card border border-border shadow-sm space-y-6">
         <div className="flex items-center justify-between pb-4 border-b border-border">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-950/40 text-emerald-400 flex items-center justify-center border border-emerald-500/20">
+            <div className="w-10 h-10 rounded-xl bg-secondary text-foreground flex items-center justify-center border border-border">
               <Database className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-foreground">PostgreSQL & Supabase Architecture</h2>
+              <h2 className="text-base font-semibold text-foreground">PostgreSQL & Supabase Architecture</h2>
               <p className="text-xs text-muted-foreground">
                 Row Level Security (RLS) and schema status
               </p>
             </div>
           </div>
           <span
-            className={`text-[11px] font-bold px-2 py-0.5 rounded-full border ${
+            className={`text-[11px] font-medium px-2.5 py-0.5 rounded-full border ${
               isSupabaseConfigured
-                ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
-                : 'bg-amber-500/10 text-amber-500 border-amber-500/20'
+                ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
+                : 'bg-muted text-muted-foreground border-border'
             }`}
           >
             {isSupabaseConfigured ? 'CONNECTED' : 'LOCAL CACHE MODE'}
@@ -341,11 +341,11 @@ CREATE POLICY "Authenticated users write access" ON public.projects FOR ALL TO a
         </div>
 
         <p className="text-xs text-muted-foreground leading-relaxed">
-          ProjectVault includes complete migrations located at <code className="text-indigo-400">supabase/migrations/20261031_init.sql</code>. It defines tables for <strong>projects</strong>, <strong>deployment_checks</strong>, <strong>github_sync_logs</strong>, and <strong>integrations</strong> with strict RLS policies ensuring only authenticated administrators can mutate project data while allowing public directory queries.
+          ProjectVault includes complete migrations located at <code className="text-foreground font-mono">supabase/migrations/20261031_init.sql</code>. It defines tables for <strong>projects</strong>, <strong>deployment_checks</strong>, <strong>github_sync_logs</strong>, and <strong>integrations</strong> with strict RLS policies ensuring only authenticated administrators can mutate project data while allowing public directory queries.
         </p>
 
-        <div className="p-4 rounded-xl bg-secondary/50 border border-border space-y-2">
-          <div className="flex items-center justify-between text-xs font-bold text-foreground">
+        <div className="p-4 rounded-xl bg-muted/40 border border-border space-y-2">
+          <div className="flex items-center justify-between text-xs font-semibold text-foreground">
             <span>SQL Migrations Ready for Supabase SQL Editor</span>
             <button
               onClick={copySqlSchema}
@@ -355,7 +355,7 @@ CREATE POLICY "Authenticated users write access" ON public.projects FOR ALL TO a
               <span>{copiedSql ? 'Copied' : 'Copy DDL'}</span>
             </button>
           </div>
-          <pre className="p-3 rounded-lg bg-slate-950 text-slate-300 font-mono text-[11px] overflow-x-auto">
+          <pre className="p-3 rounded-lg bg-muted/80 text-foreground font-mono text-[11px] overflow-x-auto">
             file: supabase/migrations/20261031_init.sql &amp; supabase/seed.sql
           </pre>
         </div>
@@ -364,11 +364,11 @@ CREATE POLICY "Authenticated users write access" ON public.projects FOR ALL TO a
       {/* SECTION 3: CLOUDFLARE WORKERS DEPLOYMENT */}
       <div className="p-6 sm:p-8 rounded-2xl bg-card border border-border shadow-sm space-y-4">
         <div className="flex items-center gap-3 pb-4 border-b border-border">
-          <div className="w-10 h-10 rounded-xl bg-amber-950/40 text-amber-400 flex items-center justify-center border border-amber-500/20">
+          <div className="w-10 h-10 rounded-xl bg-secondary text-foreground flex items-center justify-center border border-border">
             <Cloud className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-base font-bold text-foreground">Cloudflare Workers Deployment</h2>
+            <h2 className="text-base font-semibold text-foreground">Cloudflare Workers Deployment</h2>
             <p className="text-xs text-muted-foreground">
               Production configuration via wrangler.toml
             </p>
@@ -376,12 +376,12 @@ CREATE POLICY "Authenticated users write access" ON public.projects FOR ALL TO a
         </div>
 
         <p className="text-xs text-muted-foreground leading-relaxed">
-          The application is fully configured for Cloudflare Workers with serverless edge functions for GitHub synchronization, health monitoring probes, and static assets hosting:
+          The application is configured for Cloudflare Workers with serverless edge functions for GitHub synchronization, health monitoring probes, and static assets hosting:
         </p>
 
-        <div className="p-3 rounded-xl bg-slate-950 text-slate-200 font-mono text-xs space-y-1">
+        <div className="p-3.5 rounded-xl bg-muted/50 border border-border text-foreground font-mono text-xs space-y-1">
           <p className="text-muted-foreground"># Deploy to Cloudflare Workers in one command:</p>
-          <p className="text-emerald-400 font-bold">npm run build &amp;&amp; npx wrangler deploy</p>
+          <p className="font-semibold">npm run build &amp;&amp; npx wrangler deploy</p>
         </div>
       </div>
     </div>

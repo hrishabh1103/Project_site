@@ -79,3 +79,4 @@ export async function handleGithubSync(params: {
   const gh = new GitHubService(params.config);
   return await gh.commitFiles(params.files, params.commitMessage);
 }
+

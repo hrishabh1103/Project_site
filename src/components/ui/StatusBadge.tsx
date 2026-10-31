@@ -1,6 +1,5 @@
 import React from 'react';
 import { ProjectStatus } from '../../types';
-import { CheckCircle, AlertCircle, Clock, Archive, HelpCircle } from 'lucide-react';
 
 export const StatusBadge: React.FC<{ status: ProjectStatus; className?: string }> = ({
   status,
@@ -10,53 +9,50 @@ export const StatusBadge: React.FC<{ status: ProjectStatus; className?: string }
     case 'Live':
       return (
         <span
-          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 ${className}`}
+          className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400 border border-emerald-200/80 dark:border-emerald-800/60 ${className}`}
         >
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-          <CheckCircle className="w-3.5 h-3.5" />
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
           Live
-        </span>
-      );
-    case 'Offline':
-      return (
-        <span
-          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20 ${className}`}
-        >
-          <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
-          <AlertCircle className="w-3.5 h-3.5" />
-          Offline
-        </span>
-      );
-    case 'Needs Verification':
-      return (
-        <span
-          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 ${className}`}
-        >
-          <HelpCircle className="w-3.5 h-3.5" />
-          Needs Verification
         </span>
       );
     case 'In Development':
       return (
         <span
-          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 ${className}`}
+          className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-400 border border-blue-200/80 dark:border-blue-800/60 ${className}`}
         >
-          <Clock className="w-3.5 h-3.5" />
+          <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
           In Development
+        </span>
+      );
+    case 'Needs Verification':
+      return (
+        <span
+          className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400 border border-amber-200/80 dark:border-amber-800/60 ${className}`}
+        >
+          <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+          Pending Check
+        </span>
+      );
+    case 'Offline':
+      return (
+        <span
+          className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-rose-50 text-rose-700 dark:bg-rose-950/50 dark:text-rose-400 border border-rose-200/80 dark:border-rose-800/60 ${className}`}
+        >
+          <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+          Offline
         </span>
       );
     case 'Archived':
       return (
         <span
-          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-slate-500/10 text-slate-600 dark:text-slate-400 border border-slate-500/20 ${className}`}
+          className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700 dark:bg-zinc-800 dark:text-zinc-400 border border-slate-200 dark:border-zinc-700 ${className}`}
         >
-          <Archive className="w-3.5 h-3.5" />
           Archived
         </span>
       );
     default:
       return (
-        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs bg-slate-100 dark:bg-slate-800 ${className}`}>
+        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-slate-100 dark:bg-zinc-800 ${className}`}>
           {status}
         </span>
       );

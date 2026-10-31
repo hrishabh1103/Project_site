@@ -73,7 +73,7 @@ export default defineConfig({
               res.end(
                 JSON.stringify({
                   hasServerToken,
-                  defaultOwner: process.env.GITHUB_OWNER || 'hrishabhgupt',
+                  defaultOwner: process.env.GITHUB_OWNER || 'hrishabh1103',
                   defaultRepo: process.env.GITHUB_REPO || 'my-live-projects',
                   defaultBranch: process.env.GITHUB_BRANCH || 'main',
                 })

@@ -88,7 +88,7 @@ export default {
       return new Response(
         JSON.stringify({
           hasServerToken: Boolean(env.GITHUB_TOKEN),
-          defaultOwner: env.GITHUB_OWNER || 'hrishabhgupt',
+          defaultOwner: env.GITHUB_OWNER || 'hrishabh1103',
           defaultRepo: env.GITHUB_REPO || 'my-live-projects',
           defaultBranch: env.GITHUB_BRANCH || 'main',
         }),

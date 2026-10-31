@@ -33,12 +33,12 @@ interface ProjectContextType {
 }
 
 const DEFAULT_GITHUB_CONFIG: GitHubConfig = {
-  repo_owner: 'hrishabhgupt',
+  repo_owner: 'hrishabh1103',
   repo_name: 'my-live-projects',
   branch: 'main',
   access_token: '',
-  author_name: 'ProjectVault Bot',
-  author_email: 'vault@projectvault.internal',
+  author_name: 'Hrishabh Gupta',
+  author_email: 'hrishabh1104@gmail.com',
   is_active: false,
 };
 
@@ -71,36 +71,36 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return [
       {
         id: 'initial-sync-001',
-        project_id: '11111111-1111-1111-1111-111111111101',
+        project_id: 'proj-001-dr-vishal',
         project_name: 'Dr. Vishal Bhattacharya Clinic',
         sync_type: 'update',
         status: 'success',
-        commit_sha: 'a8f93e1',
-        commit_message: 'feat(projects): deploy Dr. Vishal Clinic specs & live edge status',
-        commit_url: 'https://github.com/hrishabhgupt/my-live-projects/commit/a8f93e1',
+        commit_sha: '40f4bc2',
+        commit_message: 'docs: update Dr. Vishal Clinic specs & live edge status',
+        commit_url: 'https://github.com/hrishabh1103/my-live-projects/commit/40f4bc2',
         filesAffected: [
           'README.md',
           'PROJECTS.md',
-          'projects/client-projects/dr-vishal-bhattacharya-clinic.md',
+          'projects/client-projects/dr-vishal-clinic.md',
         ],
         error_message: null,
-        created_at: '2026-10-30T18:00:00.000Z',
+        created_at: '2026-10-31T04:37:00.000Z',
       },
       {
         id: 'initial-sync-002',
-        project_id: '11111111-1111-1111-1111-111111111103',
+        project_id: 'proj-003-portfolio',
         project_name: 'Personal Portfolio',
         sync_type: 'update',
         status: 'success',
-        commit_sha: 'c7d21b4',
-        commit_message: 'docs(portfolio): refresh portfolio health badge and vercel deployment logs',
-        commit_url: 'https://github.com/hrishabhgupt/my-live-projects/commit/c7d21b4',
+        commit_sha: '40f4bc2',
+        commit_message: 'docs: verify portfolio deployment and live 3D showcase',
+        commit_url: 'https://github.com/hrishabh1103/my-live-projects/commit/40f4bc2',
         filesAffected: [
           'README.md',
-          'projects/personal-projects/personal-portfolio.md',
+          'projects/personal-projects/portfolio.md',
         ],
         error_message: null,
-        created_at: '2026-10-30T18:05:00.000Z',
+        created_at: '2026-10-31T04:37:00.000Z',
       },
     ];
   });
@@ -373,7 +373,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
         content: generateProjectsCatalogMarkdown(projects),
       },
       {
-        path: 'templates/PROJECT_TEMPLATE.md',
+        path: 'templates/project-template.md',
         content: generateTemplateMarkdown(),
       },
       ...projects.map((p) => ({

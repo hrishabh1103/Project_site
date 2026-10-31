@@ -81,27 +81,27 @@ export const GithubSyncPage: React.FC = () => {
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
       {/* Top Banner */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 rounded-2xl bg-gradient-to-r from-card via-card to-indigo-950/20 border border-border shadow-sm">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 sm:p-7 rounded-2xl bg-card border border-border shadow-sm">
         <div>
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-xs font-semibold uppercase tracking-wider text-emerald-500">
-              Synchronized Public Repository
+            <span className="w-2 h-2 rounded-full bg-emerald-500" />
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Public Repository Sync
             </span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight mt-1 flex items-center gap-3">
-            <GitBranch className="w-7 h-7 text-indigo-500" />
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight mt-1 flex items-center gap-2.5">
+            <GitBranch className="w-6 h-6 text-foreground" />
             GitHub Synchronization
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground mt-1 max-w-2xl">
-            Target repository: <strong className="text-foreground">{githubConfig.repo_owner}/{githubConfig.repo_name}</strong> (Branch: <span className="font-mono text-indigo-400">{githubConfig.branch}</span>). All changes generate structured Markdown and atomic Git commits.
+            Connected to <strong className="text-foreground">{githubConfig.repo_owner}/{githubConfig.repo_name}</strong> (Branch: <span className="font-mono text-foreground font-semibold">{githubConfig.branch}</span>). Every change produces clean Markdown and commits to your public directory.
           </p>
         </div>
 
         <div className="flex items-center gap-2.5 shrink-0">
           <Link
             to="/settings"
-            className="px-3.5 py-2.5 rounded-xl text-xs font-semibold bg-secondary hover:bg-secondary/80 text-foreground border border-border transition-colors flex items-center gap-1.5"
+            className="px-3.5 py-2.5 rounded-xl text-xs font-medium bg-secondary hover:bg-secondary/80 text-foreground border border-border transition-colors flex items-center gap-1.5"
           >
             <Settings className="w-3.5 h-3.5 text-muted-foreground" />
             Configure Repo
@@ -110,10 +110,10 @@ export const GithubSyncPage: React.FC = () => {
           <button
             onClick={handleSyncAll}
             disabled={isSyncing}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-semibold bg-primary text-primary-foreground hover:opacity-90 shadow-md shadow-primary/25 transition-all disabled:opacity-50"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold bg-primary text-primary-foreground hover:opacity-90 shadow-sm transition-all disabled:opacity-50"
           >
-            <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
-            <span>{isSyncing ? 'Pushing Commit...' : 'Sync All Projects Now'}</span>
+            <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
+            <span>{isSyncing ? 'Syncing to GitHub...' : 'Sync All Projects'}</span>
           </button>
         </div>
       </div>
@@ -123,41 +123,41 @@ export const GithubSyncPage: React.FC = () => {
         {/* Left 2 Cols: Repository Structure Tree */}
         <div className="lg:col-span-2 rounded-2xl bg-card border border-border shadow-sm p-6 space-y-4">
           <div className="flex items-center justify-between pb-3 border-b border-border">
-            <h3 className="text-sm font-bold text-foreground uppercase tracking-wider flex items-center gap-2">
-              <FolderTree className="w-4 h-4 text-indigo-500" />
-              Target Repository Structure ({githubConfig.repo_name})
+            <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+              <FolderTree className="w-4 h-4 text-muted-foreground" />
+              Repository Structure ({githubConfig.repo_name})
             </h3>
-            <span className="text-xs text-muted-foreground font-mono">
-              {projects.length + 3} files total
+            <span className="text-xs text-muted-foreground">
+              {projects.length + 3} tracked files
             </span>
           </div>
 
-          <div className="font-mono text-xs space-y-1.5 p-4 rounded-xl bg-secondary/40 border border-border/60 overflow-x-auto text-foreground">
-            <div className="text-indigo-400 font-bold flex items-center gap-1.5">
-              <Folder className="w-4 h-4" /> {githubConfig.repo_name}/
+          <div className="font-mono text-xs space-y-1.5 p-4 rounded-xl bg-muted/30 border border-border/80 overflow-x-auto text-foreground">
+            <div className="font-semibold flex items-center gap-1.5 text-foreground">
+              <Folder className="w-4 h-4 text-muted-foreground" /> {githubConfig.repo_name}/
             </div>
 
             {/* Root Files */}
             <div className="pl-6 space-y-1">
-              <div className="flex items-center justify-between group hover:bg-secondary/80 p-1 rounded">
-                <span className="flex items-center gap-1.5 text-emerald-400">
-                  <FileText className="w-3.5 h-3.5" /> README.md
+              <div className="flex items-center justify-between group hover:bg-muted/50 p-1.5 rounded-lg">
+                <span className="flex items-center gap-1.5 text-foreground">
+                  <FileText className="w-3.5 h-3.5 text-muted-foreground" /> README.md
                 </span>
                 <button
                   onClick={openReadmePreview}
-                  className="text-[11px] text-primary hover:underline flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="text-xs text-primary hover:underline flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity"
                 >
                   <Eye className="w-3 h-3" /> Preview
                 </button>
               </div>
 
-              <div className="flex items-center justify-between group hover:bg-secondary/80 p-1 rounded">
-                <span className="flex items-center gap-1.5 text-emerald-400">
-                  <FileText className="w-3.5 h-3.5" /> PROJECTS.md
+              <div className="flex items-center justify-between group hover:bg-muted/50 p-1.5 rounded-lg">
+                <span className="flex items-center gap-1.5 text-foreground">
+                  <FileText className="w-3.5 h-3.5 text-muted-foreground" /> PROJECTS.md
                 </span>
                 <button
                   onClick={openCatalogPreview}
-                  className="text-[11px] text-primary hover:underline flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="text-xs text-primary hover:underline flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity"
                 >
                   <Eye className="w-3 h-3" /> Preview
                 </button>
@@ -166,14 +166,14 @@ export const GithubSyncPage: React.FC = () => {
 
             {/* projects/ directory */}
             <div className="pl-6 pt-2">
-              <div className="text-blue-400 font-semibold flex items-center gap-1.5">
-                <Folder className="w-3.5 h-3.5" /> projects/
+              <div className="font-semibold flex items-center gap-1.5 text-foreground">
+                <Folder className="w-3.5 h-3.5 text-muted-foreground" /> projects/
               </div>
 
               {/* client-projects */}
               <div className="pl-6 pt-1">
-                <div className="text-purple-400 flex items-center gap-1.5">
-                  <Folder className="w-3.5 h-3.5" /> client-projects/ ({clientProjects.length})
+                <div className="font-medium text-foreground flex items-center gap-1.5">
+                  <Folder className="w-3.5 h-3.5 text-muted-foreground" /> client-projects/ ({clientProjects.length})
                 </div>
                 <div className="pl-6 space-y-0.5 text-muted-foreground">
                   {clientProjects.map((p) => (
@@ -186,8 +186,8 @@ export const GithubSyncPage: React.FC = () => {
 
               {/* personal-projects */}
               <div className="pl-6 pt-1">
-                <div className="text-blue-400 flex items-center gap-1.5">
-                  <Folder className="w-3.5 h-3.5" /> personal-projects/ ({personalProjects.length})
+                <div className="font-medium text-foreground flex items-center gap-1.5">
+                  <Folder className="w-3.5 h-3.5 text-muted-foreground" /> personal-projects/ ({personalProjects.length})
                 </div>
                 <div className="pl-6 space-y-0.5 text-muted-foreground">
                   {personalProjects.map((p) => (
@@ -200,8 +200,8 @@ export const GithubSyncPage: React.FC = () => {
 
               {/* ai-ml-projects */}
               <div className="pl-6 pt-1">
-                <div className="text-emerald-400 flex items-center gap-1.5">
-                  <Folder className="w-3.5 h-3.5" /> ai-ml-projects/ ({aimlProjects.length})
+                <div className="font-medium text-foreground flex items-center gap-1.5">
+                  <Folder className="w-3.5 h-3.5 text-muted-foreground" /> ai-ml-projects/ ({aimlProjects.length})
                 </div>
                 <div className="pl-6 space-y-0.5 text-muted-foreground">
                   {aimlProjects.map((p) => (
@@ -215,8 +215,8 @@ export const GithubSyncPage: React.FC = () => {
               {/* other categories */}
               {otherProjects.length > 0 && (
                 <div className="pl-6 pt-1">
-                  <div className="text-amber-400 flex items-center gap-1.5">
-                    <Folder className="w-3.5 h-3.5" /> experimental-projects/ ({otherProjects.length})
+                  <div className="font-medium text-foreground flex items-center gap-1.5">
+                    <Folder className="w-3.5 h-3.5 text-muted-foreground" /> experimental-projects/ ({otherProjects.length})
                   </div>
                   <div className="pl-6 space-y-0.5 text-muted-foreground">
                     {otherProjects.map((p) => (
@@ -238,7 +238,7 @@ export const GithubSyncPage: React.FC = () => {
                 <Folder className="w-3.5 h-3.5" /> templates/
               </div>
               <div className="pl-6 text-[11px] text-muted-foreground">
-                - PROJECT_TEMPLATE.md
+                - project-template.md
               </div>
             </div>
           </div>
@@ -247,46 +247,46 @@ export const GithubSyncPage: React.FC = () => {
         {/* Right Col: Quick Preview & Configuration Summary */}
         <div className="space-y-6">
           <div className="p-6 rounded-2xl bg-card border border-border shadow-sm space-y-4">
-            <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">
-              Preview Generated Documents
+            <h3 className="text-sm font-semibold text-foreground">
+              Preview Generated Markdown
             </h3>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              Verify how your markdown files, tables, badges, and catalogs will appear on GitHub before syncing.
+              Verify how your project files and catalog tables will appear directly on GitHub before syncing.
             </p>
 
             <div className="space-y-2">
               <button
                 onClick={openReadmePreview}
-                className="w-full flex items-center justify-between p-3 rounded-xl bg-secondary/60 hover:bg-secondary border border-border text-xs font-semibold text-foreground transition-all"
+                className="w-full flex items-center justify-between p-3 rounded-xl bg-secondary/50 hover:bg-secondary border border-border text-xs font-medium text-foreground transition-all"
               >
                 <span className="flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-emerald-400" />
+                  <FileText className="w-4 h-4 text-muted-foreground" />
                   Preview README.md
                 </span>
-                <span className="text-primary font-mono">View →</span>
+                <span className="text-primary font-medium">View →</span>
               </button>
 
               <button
                 onClick={openCatalogPreview}
-                className="w-full flex items-center justify-between p-3 rounded-xl bg-secondary/60 hover:bg-secondary border border-border text-xs font-semibold text-foreground transition-all"
+                className="w-full flex items-center justify-between p-3 rounded-xl bg-secondary/50 hover:bg-secondary border border-border text-xs font-medium text-foreground transition-all"
               >
                 <span className="flex items-center gap-2">
-                  <Layers className="w-4 h-4 text-indigo-400" />
+                  <Layers className="w-4 h-4 text-muted-foreground" />
                   Preview PROJECTS.md
                 </span>
-                <span className="text-primary font-mono">View →</span>
+                <span className="text-primary font-medium">View →</span>
               </button>
             </div>
           </div>
 
           <div className="p-6 rounded-2xl bg-card border border-border shadow-sm space-y-3 text-xs">
-            <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">
-              Integration Security
+            <h3 className="text-sm font-semibold text-foreground">
+              Security & Integrity
             </h3>
-            <div className="flex items-start gap-2 text-muted-foreground leading-relaxed">
-              <Shield className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+            <div className="flex items-start gap-2.5 text-muted-foreground leading-relaxed">
+              <Shield className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
               <span>
-                Tokens are stored server-side and never exposed in client bundles. Commits use the Git Data API with atomic SHA tree parents.
+                Tokens are stored server-side and never exposed in client bundles. Commits preserve all existing entries and use atomic git operations.
               </span>
             </div>
           </div>
@@ -308,20 +308,20 @@ export const GithubSyncPage: React.FC = () => {
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-secondary/40 text-muted-foreground uppercase tracking-wider font-semibold">
+            <thead className="bg-muted/40 text-muted-foreground uppercase tracking-wider font-semibold border-b border-border text-[11px]">
               <tr>
-                <th className="p-4">Timestamp</th>
-                <th className="p-4">Target / Project</th>
-                <th className="p-4">Type</th>
-                <th className="p-4">Commit Message</th>
-                <th className="p-4">Commit SHA</th>
-                <th className="p-4">Status</th>
-                <th className="p-4 text-right">GitHub Link</th>
+                <th className="p-4 font-medium">Timestamp</th>
+                <th className="p-4 font-medium">Target / Scope</th>
+                <th className="p-4 font-medium">Action</th>
+                <th className="p-4 font-medium">Commit Message</th>
+                <th className="p-4 font-medium">Commit SHA</th>
+                <th className="p-4 font-medium">Status</th>
+                <th className="p-4 text-right font-medium">GitHub Link</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {syncLogs.map((log) => (
-                <tr key={log.id} className="hover:bg-secondary/20 transition-colors">
+                <tr key={log.id} className="hover:bg-muted/30 transition-colors">
                   <td className="p-4 text-muted-foreground font-mono">
                     {new Date(log.created_at).toLocaleString()}
                   </td>
@@ -333,18 +333,18 @@ export const GithubSyncPage: React.FC = () => {
                       {log.sync_type}
                     </span>
                   </td>
-                  <td className="p-4 max-w-sm truncate text-foreground/90">
+                  <td className="p-4 max-w-sm truncate text-foreground">
                     {log.commit_message}
                   </td>
-                  <td className="p-4 font-mono font-bold text-indigo-400">
+                  <td className="p-4 font-mono font-medium text-foreground">
                     {log.commit_sha ? log.commit_sha.slice(0, 7) : '—'}
                   </td>
                   <td className="p-4">
                     <span
-                      className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                      className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${
                         log.status === 'success'
-                          ? 'bg-emerald-500/10 text-emerald-500'
-                          : 'bg-red-500/10 text-red-500'
+                          ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                          : 'bg-rose-500/10 text-rose-600 dark:text-rose-400'
                       }`}
                     >
                       {log.status === 'success' ? (
@@ -361,9 +361,9 @@ export const GithubSyncPage: React.FC = () => {
                         href={log.commit_url}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center gap-1 font-semibold text-primary hover:underline"
+                        className="inline-flex items-center gap-1 font-medium text-primary hover:underline"
                       >
-                        Commit <ExternalLink className="w-3 h-3" />
+                        View <ExternalLink className="w-3 h-3" />
                       </a>
                     ) : (
                       <span className="text-muted-foreground italic">—</span>

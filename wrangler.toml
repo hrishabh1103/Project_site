@@ -11,10 +11,11 @@ html_handling = "auto-trailing-slash"
 not_found_handling = "single-page-application"
 
 [vars]
-GITHUB_OWNER = "hrishabhgupt"
+GITHUB_OWNER = "hrishabh1103"
 GITHUB_REPO = "my-live-projects"
 GITHUB_BRANCH = "main"
 
 # Scheduled triggers for periodic Deployment Health Monitoring (runs every 6 hours)
 [triggers]
 crons = ["0 */6 * * *"]
+

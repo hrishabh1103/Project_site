@@ -84,106 +84,111 @@ export const MonitoringPage: React.FC = () => {
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
       {/* Header Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-2xl bg-card border border-border shadow-sm">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 sm:p-7 rounded-2xl bg-card border border-border shadow-sm">
         <div>
           <div className="flex items-center gap-2">
-            <Radio className="w-4 h-4 text-emerald-500 animate-pulse" />
-            <span className="text-xs font-semibold uppercase tracking-wider text-emerald-500">
-              Live Health & Uptime Probe
+            <span className="w-2 h-2 rounded-full bg-emerald-500" />
+            <span className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+              Service Health & Availability
             </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground tracking-tight mt-1">
-            Deployment Health Monitoring
+            Live Deployment Monitor
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground mt-1 max-w-2xl">
-            Probes external HTTP endpoints, tracks latency, flags unreachable services, and allows manual overrides without data destruction.
+            Live availability and latency checks across all your deployed project endpoints. Checks run automatically and allow manual status overrides without modifying project records.
           </p>
         </div>
 
         <button
           onClick={handleCheckAll}
           disabled={isCheckingAll}
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-semibold bg-primary text-primary-foreground hover:opacity-90 shadow-md shadow-primary/25 transition-all disabled:opacity-50 self-start sm:self-auto"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold bg-primary text-primary-foreground hover:opacity-90 shadow-sm transition-all disabled:opacity-50 self-start sm:self-auto shrink-0"
         >
-          <RefreshCw className={`w-4 h-4 ${isCheckingAll ? 'animate-spin' : ''}`} />
-          <span>{isCheckingAll ? 'Checking All URLs...' : 'Check All URLs Now'}</span>
+          <RefreshCw className={`w-3.5 h-3.5 ${isCheckingAll ? 'animate-spin' : ''}`} />
+          <span>{isCheckingAll ? 'Checking Endpoints...' : 'Ping All Endpoints'}</span>
         </button>
       </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="p-5 rounded-2xl bg-card border border-border">
-          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-            Monitored Endpoints
+          <div className="text-xs font-medium text-muted-foreground">
+            Monitored Services
           </div>
           <div className="mt-2 text-2xl font-extrabold text-foreground">
             {monitoredProjects.length}
           </div>
-          <p className="text-[11px] text-muted-foreground mt-1">Valid HTTP/HTTPS URLs</p>
+          <p className="text-[11px] text-muted-foreground mt-1">Deployments with live URLs</p>
         </div>
 
         <div className="p-5 rounded-2xl bg-card border border-border">
-          <div className="text-xs font-semibold text-emerald-500 uppercase tracking-wider flex items-center gap-1.5">
+          <div className="text-xs font-medium text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
             <CheckCircle2 className="w-3.5 h-3.5" /> Healthy (200 OK)
           </div>
           <div className="mt-2 text-2xl font-extrabold text-foreground">{healthyCount}</div>
-          <p className="text-[11px] text-muted-foreground mt-1">Passing probes</p>
+          <p className="text-[11px] text-muted-foreground mt-1">Active and responding</p>
         </div>
 
         <div className="p-5 rounded-2xl bg-card border border-border">
-          <div className="text-xs font-semibold text-red-500 uppercase tracking-wider flex items-center gap-1.5">
-            <AlertTriangle className="w-3.5 h-3.5" /> Offline / Down
+          <div className="text-xs font-medium text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
+            <AlertTriangle className="w-3.5 h-3.5" /> Offline / Inaccessible
           </div>
           <div className="mt-2 text-2xl font-extrabold text-foreground">{unhealthyCount}</div>
-          <p className="text-[11px] text-muted-foreground mt-1">Unresponsive endpoints</p>
+          <p className="text-[11px] text-muted-foreground mt-1">Pending or down</p>
         </div>
 
         <div className="p-5 rounded-2xl bg-card border border-border">
-          <div className="text-xs font-semibold text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
+          <div className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
             <Clock className="w-3.5 h-3.5" /> Average Latency
           </div>
           <div className="mt-2 text-2xl font-extrabold text-foreground">
-            {avgLatency > 0 ? `${avgLatency} ms` : 'N/A'}
+            {avgLatency > 0 ? `${avgLatency} ms` : '—'}
           </div>
-          <p className="text-[11px] text-muted-foreground mt-1">Across healthy servers</p>
+          <p className="text-[11px] text-muted-foreground mt-1">Across active servers</p>
         </div>
       </div>
 
       {/* Main Endpoints Monitoring Table */}
       <div className="rounded-2xl bg-card border border-border shadow-sm overflow-hidden">
         <div className="p-5 border-b border-border flex items-center justify-between">
-          <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">
-            All Registered Deployments ({projects.length})
-          </h3>
-          <span className="text-xs text-muted-foreground">
-            {monitoredProjects.length} active with endpoints
+          <div>
+            <h3 className="text-sm font-semibold text-foreground">
+              All Registered Deployments
+            </h3>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {monitoredProjects.length} of {projects.length} projects have live endpoints configured
+            </p>
+          </div>
+          <span className="text-xs text-muted-foreground font-medium">
+            Auto-refresh enabled
           </span>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-secondary/40 text-muted-foreground uppercase tracking-wider font-semibold">
+            <thead className="bg-muted/40 text-muted-foreground uppercase tracking-wider font-semibold border-b border-border text-[11px]">
               <tr>
-                <th className="p-4">Project</th>
-                <th className="p-4">Deployment URL</th>
-                <th className="p-4">Hosting Provider</th>
-                <th className="p-4">Status Code</th>
-                <th className="p-4">Response Time</th>
-                <th className="p-4">Health State</th>
-                <th className="p-4">Last Checked</th>
-                <th className="p-4 text-right">Actions</th>
+                <th className="p-4 font-medium">Project</th>
+                <th className="p-4 font-medium">Deployment URL</th>
+                <th className="p-4 font-medium">Hosting Provider</th>
+                <th className="p-4 font-medium">Status Code</th>
+                <th className="p-4 font-medium">Response Time</th>
+                <th className="p-4 font-medium">Health State</th>
+                <th className="p-4 font-medium">Last Checked</th>
+                <th className="p-4 text-right font-medium">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {projects.map((p) => {
                 const isChecking = checkingIds[p.id];
                 return (
-                  <tr key={p.id} className="hover:bg-secondary/20 transition-colors">
+                  <tr key={p.id} className="hover:bg-muted/30 transition-colors">
                     <td className="p-4">
-                      <div className="font-bold text-sm text-foreground">{p.name}</div>
+                      <div className="font-semibold text-sm text-foreground">{p.name}</div>
                       <div className="flex items-center gap-2 mt-1">
                         <StatusBadge status={p.project_status} />
-                        <span className="text-[11px] text-muted-foreground font-mono">{p.slug}</span>
+                        <span className="text-[11px] text-muted-foreground">{p.slug}</span>
                       </div>
                     </td>
 
@@ -199,7 +204,7 @@ export const MonitoringPage: React.FC = () => {
                           {p.live_url}
                         </a>
                       ) : (
-                        <span className="text-muted-foreground italic">Pending verification</span>
+                        <span className="text-muted-foreground italic">Pending deployment / verification</span>
                       )}
                     </td>
 
@@ -207,13 +212,13 @@ export const MonitoringPage: React.FC = () => {
                       {p.hosting_provider || 'Unassigned'}
                     </td>
 
-                    <td className="p-4 font-mono font-bold">
+                    <td className="p-4 font-mono font-medium">
                       {p.last_http_status ? (
                         <span
                           className={
                             p.last_http_status >= 200 && p.last_http_status < 400
-                              ? 'text-emerald-500'
-                              : 'text-red-500'
+                              ? 'text-emerald-600 dark:text-emerald-400 font-semibold'
+                              : 'text-rose-600 dark:text-rose-400 font-semibold'
                           }
                         >
                           HTTP {p.last_http_status}
@@ -223,7 +228,7 @@ export const MonitoringPage: React.FC = () => {
                       )}
                     </td>
 
-                    <td className="p-4 font-mono">
+                    <td className="p-4 font-mono text-muted-foreground">
                       {p.last_response_time_ms ? `${p.last_response_time_ms} ms` : '—'}
                     </td>
 
@@ -231,7 +236,7 @@ export const MonitoringPage: React.FC = () => {
                       <HealthBadge status={p.health_status} />
                     </td>
 
-                    <td className="p-4 font-mono text-muted-foreground">
+                    <td className="p-4 text-muted-foreground">
                       {p.last_health_check
                         ? new Date(p.last_health_check).toLocaleTimeString()
                         : 'Never'}
@@ -246,7 +251,7 @@ export const MonitoringPage: React.FC = () => {
                             className="p-1.5 rounded-lg bg-secondary hover:bg-secondary/80 text-foreground transition-all disabled:opacity-50"
                             title="Ping URL now"
                           >
-                            <Activity className={`w-3.5 h-3.5 text-emerald-500 ${isChecking ? 'animate-spin' : ''}`} />
+                            <Activity className={`w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 ${isChecking ? 'animate-spin' : ''}`} />
                           </button>
                         )}
 
@@ -255,7 +260,7 @@ export const MonitoringPage: React.FC = () => {
                             setOverrideModalProject(p);
                             setSelectedOverrideStatus(p.project_status);
                           }}
-                          className="px-2 py-1 rounded-lg text-xs font-semibold bg-secondary hover:bg-secondary/80 text-foreground border border-border"
+                          className="px-2.5 py-1 rounded-lg text-xs font-medium bg-secondary hover:bg-secondary/80 text-foreground border border-border"
                           title="Override Status"
                         >
                           Override

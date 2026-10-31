@@ -193,3 +193,4 @@ export const Topbar: React.FC<{ onMenuClick: () => void }> = ({ onMenuClick }) =
     </header>
   );
 };
+

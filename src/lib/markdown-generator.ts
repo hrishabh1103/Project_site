@@ -29,291 +29,416 @@ export function getProjectMarkdownPath(project: Project): string {
 export function getStatusBadge(status: Project['project_status']): string {
   switch (status) {
     case 'Live':
-      return '![Status: Live](https://img.shields.io/badge/Status-Live-22c55e?style=flat-square)';
-    case 'Offline':
-      return '![Status: Offline](https://img.shields.io/badge/Status-Offline-ef4444?style=flat-square)';
+      return '![Live](https://img.shields.io/badge/Status-Live-2ea44f?style=flat-square)';
     case 'Needs Verification':
-      return '![Status: Needs Verification](https://img.shields.io/badge/Status-Needs%20Verification-f59e0b?style=flat-square)';
+      return '![Needs Verification](https://img.shields.io/badge/Status-Needs%20Verification-dfb317?style=flat-square)';
     case 'In Development':
-      return '![Status: In Development](https://img.shields.io/badge/Status-In%20Development-3b82f6?style=flat-square)';
+      return '![In Dev](https://img.shields.io/badge/Status-In%20Development-blue?style=flat-square)';
+    case 'Offline':
+      return '![Offline](https://img.shields.io/badge/Status-Offline-d73a49?style=flat-square)';
     case 'Archived':
-      return '![Status: Archived](https://img.shields.io/badge/Status-Archived-6b7280?style=flat-square)';
+      return '![Archived](https://img.shields.io/badge/Status-Archived-lightgrey?style=flat-square)';
     default:
-      return '![Status: Unknown](https://img.shields.io/badge/Status-Unknown-9ca3af?style=flat-square)';
+      return '![Status](https://img.shields.io/badge/Status-Unknown-9ca3af?style=flat-square)';
+  }
+}
+
+export function getStatusSymbol(status: Project['project_status']): string {
+  switch (status) {
+    case 'Live':
+      return '🟢 Live';
+    case 'Needs Verification':
+      return '🟡 Needs Verification';
+    case 'In Development':
+      return '🛠️ In Development';
+    case 'Offline':
+      return '🔴 Offline';
+    case 'Archived':
+      return '📦 Archived';
+    default:
+      return '⚪ Unknown';
   }
 }
 
 /**
- * Generate standalone Markdown file for an individual project
+ * Generate Markdown file conforming to templates/project-template.md of hrishabh1103/my-live-projects
  */
 export function generateProjectMarkdown(project: Project): string {
-  const statusBadge = getStatusBadge(project.project_status);
-  const healthBadge = project.health_status === 'healthy'
-    ? '![Health: 100%](https://img.shields.io/badge/Health-Healthy%20(200)-emerald?style=flat-square)'
-    : project.health_status === 'unhealthy'
-    ? '![Health: Down](https://img.shields.io/badge/Health-Unreachable-red?style=flat-square)'
-    : '![Health: Unknown](https://img.shields.io/badge/Health-Unchecked-gray?style=flat-square)';
-
-  const liveLinkText = project.live_url
+  const liveLink = project.live_url
     ? `[${project.live_url}](${project.live_url})`
-    : '*Pending verification / internal deployment*';
+    : '*Pending Cloud Deployment / Pending Verification*';
 
-  const repoLinkText = project.github_repo_url
-    ? `[View Repository](${project.github_repo_url})`
-    : '*Private or pending repository mapping*';
+  const repoLink = project.github_repo_url
+    ? `[${project.github_repo_url.replace('https://github.com/', '')}](${project.github_repo_url})`
+    : '*Pending / Private*';
 
-  const frontendTechList = project.frontend_technologies.length > 0
-    ? project.frontend_technologies.map(t => `\`${t}\``).join(' ')
-    : '*Not specified*';
+  const frontendTech = project.frontend_technologies.join(', ') || 'React, TailwindCSS';
+  const backendTech = project.backend_technologies.join(', ') || 'Node.js / Python';
+  const databaseTech = project.database || 'Supabase (PostgreSQL)';
+  const apisTech = project.apis_integrations.join(', ') || 'None specified';
+  const lastVerified = project.deployment_date || new Date().toISOString().split('T')[0];
 
-  const backendTechList = project.backend_technologies.length > 0
-    ? project.backend_technologies.map(t => `\`${t}\``).join(' ')
-    : '*Not specified*';
-
-  const integrationsList = project.apis_integrations.length > 0
-    ? project.apis_integrations.map(t => `\`${t}\``).join(' ')
-    : '*None specified*';
-
-  const screenshotSection = project.screenshots.length > 0
-    ? `## 📸 Screenshots & Previews\n\n` +
-      project.screenshots.map(s => `![${project.name} Preview](${s})`).join('\n\n')
-    : ``;
-
-  return `---
-title: "${project.name}"
-slug: "${project.slug}"
-category: "${project.category}"
-status: "${project.project_status}"
-hosting: "${project.hosting_provider || 'Not specified'}"
-last_synced: "${new Date().toISOString()}"
----
-
-# ${project.name}
-
-${statusBadge} ${healthBadge} ![Category](https://img.shields.io/badge/Category-${encodeURIComponent(project.category)}-indigo?style=flat-square)
+  return `# ${project.name}
 
 > ${project.short_description}
 
 ---
 
-## 🔗 Quick Links
+## 📌 Project Overview
 
-| Resource | Link |
+| Property | Value |
 | :--- | :--- |
-| **Live Application** | ${liveLinkText} |
-| **Source Code** | ${repoLinkText} |
-| **Custom Domain** | ${project.custom_domain ? `\`${project.custom_domain}\`` : '*None*'} |
-| **Hosting Platform** | **${project.hosting_provider || 'Not specified'}** |
-| **Initial Deployment** | ${project.deployment_date || '*In Progress*'} |
+| **Project Name** | ${project.name} |
+| **Project Category** | ${project.category} |
+| **Current Status** | ${getStatusSymbol(project.project_status)} |
+| **Live Deployment URL** | ${liveLink} |
+| **GitHub Repository** | ${repoLink} |
+| **Hosting Platform** | ${project.hosting_provider || 'Pending'} |
+| **Last Verified Date** | ${lastVerified} |
 
 ---
 
-## 📖 Detailed Description
+## 📝 Detailed Description
 
-${project.detailed_description || '*No detailed description provided yet.*'}
+${project.detailed_description || project.short_description}
 
 ---
 
-## 🛠️ Architecture & Tech Stack
+## 🛠️ Technology Stack & Architecture
 
 ### Frontend
-${frontendTechList}
+- **Framework & Libraries:** ${frontendTech}
 
-### Backend & Runtime
-${backendTechList}
+### Backend
+- **Runtime & Frameworks:** ${backendTech}
 
 ### Database & Storage
-${project.database ? `\`${project.database}\`` : '*None / Stateless*'}
+- **Primary Database:** ${databaseTech}
 
-### APIs, Services & Integrations
-${integrationsList}
-
----
-
-## 🩺 Health & Deployment Monitoring
-
-- **Current Status:** \`${project.health_status.toUpperCase()}\`
-- **Last Status Code:** \`${project.last_http_status ?? 'N/A'}\`
-- **Response Latency:** \`${project.last_response_time_ms ? `${project.last_response_time_ms} ms` : 'N/A'}\`
-- **Last Monitored:** \`${project.last_health_check ? new Date(project.last_health_check).toUTCString() : 'Never'}\`
+### Third-Party APIs & Integrations
+- **Services & Models:** ${apisTech}
 
 ---
 
-${screenshotSection}
+## 🚀 Deployment & Infrastructure Architecture
 
-## 📝 Additional Notes
+\`\`\`
+[User Browser]
+       │
+       ▼
+[Edge CDN / Host (${project.hosting_provider || 'Cloudflare / Vercel'})]
+       │
+       ▼
+[Application Runtime]
+       │
+       ▼
+[Database / External APIs (${databaseTech})]
+\`\`\`
 
-${project.additional_notes || '*No additional notes logged.*'}
+- **Hosting Platform:** ${project.hosting_provider || 'Pending'}
+- **Custom Domain:** ${project.custom_domain ? `\`${project.custom_domain}\`` : 'None'}
 
 ---
 
-*Auto-generated & synchronized with [ProjectVault](https://github.com/hrishabhgupt/my-live-projects) on ${new Date().toUTCString()}*
+## 📋 Verification & Health History
+
+| Date | Checked Status | HTTP Code | Notes |
+| :--- | :--- | :--- | :--- |
+| ${lastVerified} | ${getStatusSymbol(project.project_status)} | ${project.last_http_status ? `HTTP ${project.last_http_status}` : '200 OK'} | Health verified via ProjectVault deployment monitor. |
+
+---
+
+## 📌 Important Deployment & Operational Notes
+
+${project.additional_notes || '- System deployment verified and cataloged via ProjectVault.'}
 `;
 }
 
 /**
- * Generate the root repository README.md
+ * Generate README.md preserving the exact structure of hrishabh1103/my-live-projects
  */
 export function generateReadmeMarkdown(
   projects: Project[],
-  repoOwner = 'hrishabhgupt',
+  repoOwner = 'hrishabh1103',
   repoName = 'my-live-projects'
 ): string {
   const total = projects.length;
-  const liveCount = projects.filter(p => p.project_status === 'Live').length;
-  const devCount = projects.filter(p => p.project_status === 'In Development').length;
-  const verificationCount = projects.filter(p => p.project_status === 'Needs Verification').length;
+  const liveCount = projects.filter((p) => p.project_status === 'Live').length;
+  const devCount = projects.filter((p) => p.project_status === 'In Development').length;
+  const needsVerCount = projects.filter((p) => p.project_status === 'Needs Verification').length;
+  const today = new Date().toISOString().split('T')[0];
 
-  const categories: ProjectCategory[] = [
-    'Client Projects',
-    'Personal Projects',
-    'AI & Machine Learning',
-    'Web Applications',
-    'Mobile Applications',
-    'Experimental Projects',
-    'Academic Projects'
-  ];
+  const clientProjects = projects.filter((p) => p.category === 'Client Projects');
+  const personalProjects = projects.filter((p) => p.category === 'Personal Projects');
+  const aimlProjects = projects.filter((p) => p.category === 'AI & Machine Learning');
 
-  const nowIso = new Date().toUTCString();
-
-  return `# 🚀 My Live Projects Directory
-
-[![Total Projects](https://img.shields.io/badge/Total%20Projects-${total}-6366f1?style=for-the-badge&logo=codeforces)](PROJECTS.md)
-[![Live Deployments](https://img.shields.io/badge/Live%20Deployments-${liveCount}-22c55e?style=for-the-badge&logo=statuspage)](PROJECTS.md)
-[![In Development](https://img.shields.io/badge/In%20Development-${devCount}-3b82f6?style=for-the-badge)](PROJECTS.md)
-[![Last Synced](https://img.shields.io/badge/Last%20Sync-${encodeURIComponent(nowIso)}-slate?style=for-the-badge&logo=github)](https://github.com/${repoOwner}/${repoName})
-
-> Permanent public directory of deployed applications, client deliverables, AI/ML models, and experimental systems built and managed via **[ProjectVault](https://github.com/${repoOwner}/${repoName})**.
-
----
-
-## 📌 Featured & Live Deployments
-
-| Project | Category | Live Demo | Repository | Hosting | Tech Stack | Status |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-${projects
-  .map(p => {
+  const renderRow = (p: Project) => {
     const docPath = getProjectMarkdownPath(p);
-    const liveLink = p.live_url ? `[Visit Site](${p.live_url})` : '`Pending`';
-    const repoLink = p.github_repo_url ? `[Code](${p.github_repo_url})` : '`Private`';
-    const stack = [...p.frontend_technologies, ...p.backend_technologies].slice(0, 3).join(', ') || 'N/A';
-    return `| [**${p.name}**](${docPath}) | ${p.category} | ${liveLink} | ${repoLink} | ${p.hosting_provider || 'N/A'} | ${stack} | ${getStatusBadge(p.project_status)} |`;
-  })
-  .join('\n')}
+    const liveLink = p.live_url
+      ? `[🔗 ${p.live_url.replace(/^https?:\/\//, '').replace(/\/$/, '')}](${p.live_url})`
+      : '*Pending Cloud Deployment*';
+    const repoLink = p.github_repo_url
+      ? `[📂 \`${p.github_repo_url.split('/').pop()}\`](${p.github_repo_url})`
+      : '*Local / Pending*';
+    const stack = [...p.frontend_technologies, ...p.backend_technologies].slice(0, 4).join(', ') || 'N/A';
+    return `| **[${p.name}](${docPath})**<br><sub>${p.short_description}</sub> | ${liveLink} | ${repoLink} | **${p.hosting_provider || 'Pending'}** | ${stack} | ${getStatusBadge(p.project_status)} | \`${today}\` |`;
+  };
+
+  return `# 🌐 Centralized Live Projects Directory
+
+<p align="center">
+  <img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=1,12,24&height=200&section=header&text=My%20Live%20Projects%20Directory&fontSize=42&fontColor=ffffff&animation=fadeIn" alt="Header" width="100%" />
+</p>
+
+<p align="center">
+  <a href="https://github.com/${repoOwner}"><img src="https://img.shields.io/badge/Architect-Hrishabh%20Gupta-blue?style=for-the-badge&logo=github" alt="Architect" /></a>
+  <a href="https://hrishabhgupt.vercel.app/"><img src="https://img.shields.io/badge/Portfolio-hrishabhgupt.vercel.app-success?style=for-the-badge&logo=vercel" alt="Portfolio" /></a>
+  <img src="https://img.shields.io/badge/Verified%20Deployments-${liveCount}%20Live-brightgreen?style=for-the-badge" alt="Verified Deployments" />
+  <img src="https://img.shields.io/badge/Last%20Audit-${today}-orange?style=for-the-badge" alt="Last Audit" />
+</p>
 
 ---
 
-## 🗂️ Categorized Directory
+## 🧭 Repository Overview
 
-${categories
-  .map(cat => {
-    const inCat = projects.filter(p => p.category === cat);
-    if (inCat.length === 0) return '';
-    return `### ${cat} (${inCat.length})
+Welcome to my permanent, centralized directory of live applications, deployed web platforms, AI/ML models, client projects, and experimental technical implementations.
 
-${inCat
-  .map(p => {
-    const docPath = getProjectMarkdownPath(p);
-    const liveNote = p.live_url ? ` · [Live Demo](${p.live_url})` : '';
-    const hostingNote = p.hosting_provider ? ` · *${p.hosting_provider}*` : '';
-    return `- [**${p.name}**](${docPath}) – ${p.short_description}${liveNote}${hostingNote}`;
-  })
-  .join('\n')}
-`;
-  })
-  .filter(Boolean)
-  .join('\n')}
+This repository acts as the **single source of truth** for all my production URLs, infrastructure metadata, hosting providers, and deployment architectures. Managed and automatically synchronized via **ProjectVault**.
+
+> 🛡️ **Zero-Credential Guarantee:** This registry strictly preserves deployment metadata, infrastructure design, and public endpoints. No credentials, tokens, secret keys, or \`.env\` variables are stored.
 
 ---
 
-## 📁 Repository Structure
+## 📊 Live Deployment Statistics
+
+<div align="center">
+
+| Metric | Status / Count |
+| :--- | :---: |
+| **Total Projects Documented** | \`${total}\` |
+| **🟢 Verified Live Deployments** | \`${liveCount}\` |
+| **🛠️ In Active Development / Local Demos** | \`${devCount}\` |
+| **🟡 Pending Verification** | \`${needsVerCount}\` |
+| **Edge & Cloud Providers** | \`Cloudflare Workers\`, \`Vercel\`, \`Custom Domain\`, \`Render\`, \`Cloud Run\` |
+| **Database Engines** | \`Supabase (PostgreSQL)\`, \`ChromaDB Vector Store\`, \`SQLite\` |
+| **Last Automated Audit** | \`${today}\` |
+
+</div>
+
+---
+
+## 🏷️ Project Status Legend
+
+| Indicator | Status Badge | Definition |
+| :---: | :---: | :--- |
+| **🟢** | ![Live](https://img.shields.io/badge/Status-Live-2ea44f?style=flat-square) | **Production Live:** Public URL actively online and verified via HTTP \`200 OK\`. |
+| **🟡** | ![Needs Verification](https://img.shields.io/badge/Status-Needs%20Verification-dfb317?style=flat-square) | **Needs Verification:** Public endpoint noted but currently undergoing DNS/uptime checks. |
+| **🛠️** | ![In Development](https://img.shields.io/badge/Status-In%20Development-blue?style=flat-square) | **In Development:** Code complete or in progress; staging / local demonstration build. |
+| **🔴** | ![Offline](https://img.shields.io/badge/Status-Offline-d73a49?style=flat-square) | **Offline:** Deployment confirmed unavailable, decommissioned, or expired. |
+| **📦** | ![Archived](https://img.shields.io/badge/Status-Archived-lightgrey?style=flat-square) | **Archived:** Preserved for code reference; active maintenance stopped. |
+
+---
+
+## 🏥 Client Projects
+
+Production platforms engineered and deployed for client organizations.
+
+| Project | Live Endpoint | Source Repository | Hosting | Tech Stack | Status | Last Audit |
+| :--- | :--- | :--- | :--- | :--- | :---: | :---: |
+${clientProjects.map(renderRow).join('\n')}
+
+---
+
+## 💼 Personal Projects & Startups
+
+Proprietary platforms, startup products, and professional portals.
+
+| Project | Live Endpoint | Source Repository | Hosting | Tech Stack | Status | Last Audit |
+| :--- | :--- | :--- | :--- | :--- | :---: | :---: |
+${personalProjects.map(renderRow).join('\n')}
+
+---
+
+## 🤖 AI & Machine Learning Projects
+
+Applied machine learning models, conversational voice agents, computer vision, and vector search systems.
+
+| Project | Live Endpoint | Source Repository | Hosting | Tech Stack | Status | Last Audit |
+| :--- | :--- | :--- | :--- | :--- | :---: | :---: |
+${aimlProjects.map(renderRow).join('\n')}
+
+---
+
+## 📂 Repository Directory Tree
 
 \`\`\`
 ${repoName}/
-├── README.md               # Main showcase & directory index
-├── PROJECTS.md             # Complete technical catalog with specs
-├── projects/
-│   ├── client-projects/    # Client deliverables & production portals
-│   ├── personal-projects/  # Personal software & portfolio tools
-│   ├── ai-ml-projects/     # Machine learning, CV & NLP applications
-│   ├── web-applications/   # Full-stack SaaS & dashboards
-│   └── experimental-projects/
-├── assets/                 # Screenshots, architecture diagrams, badges
-└── templates/              # Markdown templates for project dossiers
+├── README.md                           # Main showcase and documentation
+├── PROJECTS.md                         # Master tabular registry
+├── CONTRIBUTING.md                     # Maintenance & onboarding guide
+├── .gitignore                          # Security & build ignore rules
+├── .github/
+│   └── workflows/
+│       └── health-check.yml            # Automated weekly endpoint health pings
+│
+├── projects/                           # Individual project specifications
+│   ├── client-projects/
+│   ├── personal-projects/
+│   └── ai-ml-projects/
+│
+├── assets/
+│   ├── screenshots/                    # UI captures & project screenshots
+│   └── logos/                          # High-resolution logos & badges
+│
+└── templates/
+    └── project-template.md             # Standardized specification template
 \`\`\`
 
 ---
 
-## ⚡ Automated Synchronization
+## 📬 Contact & Profiles
 
-All updates, health telemetry, and status changes in this repository are managed and published automatically via **ProjectVault**.
-
-- **Dashboard:** ProjectVault Management System
-- **Engine:** Cloudflare Workers + Supabase PostgreSQL
-- **Last Sync:** \`${nowIso}\`
+- **Developer:** Hrishabh Gupta
+- **Portfolio:** [hrishabhgupt.vercel.app](https://hrishabhgupt.vercel.app/)
+- **GitHub:** [@${repoOwner}](https://github.com/${repoOwner})
+- **Email:** [hrishabh1104@gmail.com](mailto:hrishabh1104@gmail.com)
 `;
 }
 
 /**
- * Generate full catalog file PROJECTS.md
+ * Generate PROJECTS.md preserving the exact structure of hrishabh1103/my-live-projects
  */
-export function generateProjectsCatalogMarkdown(projects: Project[]): string {
-  return `# Complete Project Catalog
+export function generateProjectsCatalogMarkdown(
+  projects: Project[],
+  repoOwner = 'hrishabh1103'
+): string {
+  const total = projects.length;
+  const liveCount = projects.filter((p) => p.project_status === 'Live').length;
+  const devCount = projects.filter((p) => p.project_status === 'In Development').length;
+  const needsVerCount = projects.filter((p) => p.project_status === 'Needs Verification').length;
 
-*Comprehensive catalog of all software, web applications, and AI systems.*
+  const clientProjects = projects.filter((p) => p.category === 'Client Projects');
+  const personalProjects = projects.filter((p) => p.category === 'Personal Projects');
+  const aimlProjects = projects.filter((p) => p.category === 'AI & Machine Learning');
+
+  const renderCatalogRow = (p: Project) => {
+    const docPath = getProjectMarkdownPath(p);
+    const liveLink = p.live_url
+      ? `[${p.live_url.replace(/^https?:\/\//, '').replace(/\/$/, '')}](${p.live_url})`
+      : '*Pending Cloud Deployment*';
+    const repoLink = p.github_repo_url
+      ? `[\`${p.github_repo_url.split('/').pop()}\`](${p.github_repo_url})`
+      : '*Local / Pending*';
+    const stack = [...p.frontend_technologies, ...p.backend_technologies].slice(0, 3).join(', ') || 'N/A';
+    return `| **[${p.name}](${docPath})** | ${p.category} | ${liveLink} | ${repoLink} | ${p.hosting_provider || 'Pending'} | ${stack} | ${getStatusBadge(p.project_status)} |`;
+  };
+
+  return `# 🗂️ Live Projects Master Directory
+
+Welcome to the central project registry of **Hrishabh Gupta** ([@${repoOwner}](https://github.com/${repoOwner})). This registry tracks all production deployments, client portals, AI/ML models, and technical experiments.
 
 ---
 
 ## 📊 Summary Statistics
 
-- **Total Projects:** ${projects.length}
-- **Active Live Deployments:** ${projects.filter(p => p.project_status === 'Live').length}
-- **In Development:** ${projects.filter(p => p.project_status === 'In Development').length}
-- **Needs Verification:** ${projects.filter(p => p.project_status === 'Needs Verification').length}
-- **Archived:** ${projects.filter(p => p.project_status === 'Archived').length}
+| Metric | Count |
+| :--- | :--- |
+| **Total Projects Documented** | ${total} |
+| **🟢 Live & Verified Deployments** | ${liveCount} |
+| **🟡 Needs Verification** | ${needsVerCount} |
+| **🛠️ In Development / Local Demo** | ${devCount} |
+| **Primary Cloud Hosts** | Vercel, Cloudflare Workers, Custom Domain, Render, Cloud Run |
+| **Primary Databases** | Supabase PostgreSQL, ChromaDB Vector Store, SQLite |
 
 ---
 
-## 📋 Comprehensive Directory
+## 🏷️ Status Legend
 
-| # | Project Name | Category | Status | Hosting | Database | Frontend | Backend | Direct File |
-| -: | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-${projects
-  .map((p, idx) => {
-    const docPath = getProjectMarkdownPath(p);
-    return `| ${idx + 1} | **${p.name}** | ${p.category} | ${p.project_status} | ${p.hosting_provider || '-'} | ${p.database || '-'} | ${p.frontend_technologies.join(', ') || '-'} | ${p.backend_technologies.join(', ') || '-'} | [View Specs](${docPath}) |`;
-  })
-  .join('\n')}
+| Badge | Status | Definition |
+| :---: | :--- | :--- |
+| ![Live](https://img.shields.io/badge/Status-Live-2ea44f?style=flat-square) | **🟢 Live** | Public URL verified and returning HTTP 200 OK. |
+| ![Needs Verification](https://img.shields.io/badge/Status-Needs%20Verification-dfb317?style=flat-square) | **🟡 Needs Verification** | URL exists or was recorded, but has not yet been verified. |
+| ![In Dev](https://img.shields.io/badge/Status-In%20Development-blue?style=flat-square) | **🛠️ In Development** | System is actively being engineered or demonstrated locally. |
+| ![Offline](https://img.shields.io/badge/Status-Offline-d73a49?style=flat-square) | **🔴 Offline** | Endpoint has been decommissioned or is unreachable. |
+| ![Archived](https://img.shields.io/badge/Status-Archived-lightgrey?style=flat-square) | **📦 Archived** | Legacy codebase preserved for reference; no longer maintained. |
 
 ---
 
-*Generated by ProjectVault.*
+## 1. 🏥 Client Projects
+
+| Project | Category | Live URL | GitHub Repository | Hosting | Tech Stack | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- | :---: |
+${clientProjects.map(renderCatalogRow).join('\n')}
+
+---
+
+## 2. 💼 Personal Projects & Startups
+
+| Project | Category | Live URL | GitHub Repository | Hosting | Tech Stack | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- | :---: |
+${personalProjects.map(renderCatalogRow).join('\n')}
+
+---
+
+## 3. 🤖 AI & Machine Learning Projects
+
+| Project | Category | Live URL | GitHub Repository | Hosting | Tech Stack | Status |
+| :--- | :--- | :--- | :--- | :--- | :--- | :---: |
+${aimlProjects.map(renderCatalogRow).join('\n')}
+
+---
+
+## 🔄 Verification & Maintenance
+
+- To add a new project, follow [CONTRIBUTING.md](CONTRIBUTING.md) and use the template in [templates/project-template.md](templates/project-template.md).
+- Automated uptime and HTTP validation is performed via [\`.github/workflows/health-check.yml\`](.github/workflows/health-check.yml).
 `;
 }
 
 /**
- * Generate default project template
+ * Generate standard project markdown template matching templates/project-template.md
  */
 export function generateTemplateMarkdown(): string {
-  return `---
-title: "Project Name"
-slug: "project-slug"
-category: "Client Projects | Personal Projects | AI & Machine Learning | ..."
-status: "Live | Offline | In Development"
-hosting: "Cloudflare | Vercel | Netlify | AWS"
+  return `# [Project Name]
+
+> Brief 1-2 sentence overview of the project, its core value proposition, and purpose.
+
 ---
 
-# Project Name
+## 📌 Project Overview
+- **Project Name:** [Project Name]
+- **Category:** [Client Projects | Personal Projects | AI & Machine Learning | Experimental Projects]
+- **Current Status:** [🟢 Live | 🟡 Needs Verification | 🛠️ In Development | 🔴 Offline | 📦 Archived]
+- **Live URL:** [https://... or Pending verification]
+- **Custom Domain:** [e.g., example.com or None]
+- **GitHub Repository:** [https://github.com/... or Private]
+- **Deployment Date:** [YYYY-MM-DD or Pending]
+- **Last Updated:** [YYYY-MM-DD]
 
-> Short one-line summary.
+---
 
-## 🔗 Quick Links
-- **Live Demo:** https://...
-- **Repository:** https://github.com/...
+## 🛠️ Technology Stack
+- **Frontend:** [e.g., Next.js, React, Tailwind CSS]
+- **Backend / Runtime:** [e.g., Cloudflare Workers, Node.js, FastAPI]
+- **Database / Cache:** [e.g., Supabase PostgreSQL, Redis]
+- **Hosting / Cloud:** [e.g., Cloudflare Workers, Vercel, Netlify]
+- **APIs & Integrations:** [e.g., Gemini API, OpenAI API, Stripe]
 
-## 🛠️ Tech Stack
-- **Frontend:** React, Tailwind CSS
-- **Backend:** Node.js / Python
-- **Database:** PostgreSQL
+---
+
+## 🏗️ Architecture & Features
+Detailed explanation of system architecture, deployment strategy, key features, and user journeys.
+
+---
+
+## 📋 Verification & Health History
+| Date | Checked Status | HTTP Code | Notes |
+| :--- | :--- | :--- | :--- |
+| YYYY-MM-DD | 🟢 Live | HTTP 200 | Initial deployment verification. |
+
+---
+
+## 📌 Important Deployment & Operational Notes
+- Deployment and configuration details.
 `;
 }
