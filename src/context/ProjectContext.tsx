@@ -8,6 +8,7 @@ import {
   generateProjectsCatalogMarkdown,
   generateTemplateMarkdown,
   getProjectMarkdownPath,
+  parseProjectMarkdown,
 } from '../lib/markdown-generator';
 import { GitHubService } from '../lib/github-api';
 
@@ -49,19 +50,22 @@ const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
 export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [projects, setProjects] = useState<Project[]>(() => {
     try {
-      const storedVersion = localStorage.getItem('projectvault_storage_version');
-      if (storedVersion !== CURRENT_STORAGE_VERSION) {
-        // Wipe stale mock caches from previous development runs
-        localStorage.removeItem('projectvault_projects');
-        localStorage.removeItem('projectvault_github_config');
-        localStorage.removeItem('projectvault_sync_logs');
-        localStorage.setItem('projectvault_storage_version', CURRENT_STORAGE_VERSION);
-        return INITIAL_PROJECTS;
-      }
       const saved = localStorage.getItem('projectvault_projects');
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length === 13) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          // Merge initial projects with stored projects so that:
+          // 1. Any newly cataloged baseline project (like Nostalgia) is present
+          // 2. All user-added and edited projects are strictly preserved
+          const slugMap = new Map<string, Project>();
+          INITIAL_PROJECTS.forEach((p) => slugMap.set(p.slug, p));
+          parsed.forEach((p: Project) => {
+            if (p && p.slug) {
+              slugMap.set(p.slug, p);
+            }
+          });
+          return Array.from(slugMap.values());
+        }
       }
     } catch (e) {
       console.error('Failed to parse saved projects', e);
@@ -169,6 +173,95 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     loadFromSupabase();
   }, []);
+
+  // Synchronize remote projects from GitHub repository in the background
+  useEffect(() => {
+    let isCancelled = false;
+
+    async function syncRemoteProjectsFromGitHub() {
+      try {
+        const owner = githubConfig.repo_owner || 'hrishabh1103';
+        const repo = githubConfig.repo_name || 'my-live-projects';
+        const branch = githubConfig.branch || 'main';
+
+        const headers: Record<string, string> = {
+          Accept: 'application/vnd.github.v3+json',
+        };
+        if (githubConfig.access_token) {
+          headers.Authorization = `Bearer ${githubConfig.access_token}`;
+        }
+
+        const treeRes = await fetch(
+          `https://api.github.com/repos/${owner}/${repo}/git/trees/${branch}?recursive=1`,
+          { headers }
+        );
+
+        if (!treeRes.ok) return;
+
+        const treeData = (await treeRes.json()) as any;
+        if (!treeData.tree || !Array.isArray(treeData.tree)) return;
+
+        // Find all markdown files in projects/ directory: e.g. projects/category/slug.md
+        const projectFiles = treeData.tree.filter(
+          (item: any) =>
+            item.path &&
+            typeof item.path === 'string' &&
+            item.path.startsWith('projects/') &&
+            item.path.endsWith('.md') &&
+            !item.path.includes('templates/')
+        );
+
+        if (projectFiles.length === 0) return;
+
+        setProjects((currentProjects) => {
+          const currentSlugs = new Set(currentProjects.map((p) => p.slug));
+          const missingFiles = projectFiles.filter((item: any) => {
+            const filename = item.path.split('/').pop()?.replace('.md', '');
+            return filename && !currentSlugs.has(filename);
+          });
+
+          if (missingFiles.length === 0) return currentProjects;
+
+          (async () => {
+            const fetchedProjects: Project[] = [];
+            for (const file of missingFiles) {
+              if (isCancelled) break;
+              try {
+                const rawRes = await fetch(
+                  `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${file.path}`
+                );
+                if (rawRes.ok) {
+                  const content = await rawRes.text();
+                  const parsed = parseProjectMarkdown(content, file.path);
+                  if (parsed) fetchedProjects.push(parsed);
+                }
+              } catch (e) {
+                console.warn(`Could not fetch remote project file ${file.path}`, e);
+              }
+            }
+
+            if (!isCancelled && fetchedProjects.length > 0) {
+              setProjects((prev) => {
+                const slugSet = new Set(prev.map((p) => p.slug));
+                const toAdd = fetchedProjects.filter((p) => !slugSet.has(p.slug));
+                return [...toAdd, ...prev];
+              });
+            }
+          })();
+
+          return currentProjects;
+        });
+      } catch (err) {
+        console.warn('GitHub repository remote check skipped', err);
+      }
+    }
+
+    syncRemoteProjectsFromGitHub();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [githubConfig.repo_owner, githubConfig.repo_name, githubConfig.branch, githubConfig.access_token]);
 
   // Compute dashboard metrics
   const stats: DashboardStats = useMemo(() => {

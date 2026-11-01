@@ -22,8 +22,8 @@ console.log('✓ Administrator authentication credentials verified (admin@hrisha
 
 // 1. Verify Initial Projects count from existing repo
 console.log(`Checking tracked projects count: ${INITIAL_PROJECTS.length}`);
-if (INITIAL_PROJECTS.length !== 13) {
-  throw new Error(`Expected 13 projects matching hrishabh1103/my-live-projects, got ${INITIAL_PROJECTS.length}`);
+if (INITIAL_PROJECTS.length < 13) {
+  throw new Error(`Expected at least 13 projects matching hrishabh1103/my-live-projects, got ${INITIAL_PROJECTS.length}`);
 }
 
 // 2. Verify Exact Initial Projects
@@ -65,7 +65,11 @@ if (!videoAnalyzer) throw new Error('Missing Video Analyzer');
 const supportBot = INITIAL_PROJECTS.find(p => p.slug === 'customer-support-bot');
 if (!supportBot) throw new Error('Missing Customer Support Bot');
 
-console.log('✓ All 13 projects verified with exact URLs, categories, stacks, and hosting providers.');
+const nostalgia = INITIAL_PROJECTS.find(p => p.slug === 'nostalgia-experience-bharat-exe');
+if (!nostalgia) throw new Error('Missing Nostalgia_Experience_Bharat.Exe');
+if (nostalgia.live_url !== 'https://nostalgiasite.vercel.app/') throw new Error('Incorrect Nostalgia URL');
+
+console.log(`✓ All ${INITIAL_PROJECTS.length} projects verified with exact URLs, categories, stacks, and hosting providers.`);
 
 // 3. Test Markdown Generation for each project
 INITIAL_PROJECTS.forEach((p) => {

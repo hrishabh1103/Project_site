@@ -442,3 +442,123 @@ Detailed explanation of system architecture, deployment strategy, key features, 
 - Deployment and configuration details.
 `;
 }
+
+/**
+ * Parse a markdown project file from GitHub repository into a Project object
+ */
+export function parseProjectMarkdown(content: string, filePath: string): Project | null {
+  try {
+    const slug = filePath.split('/').pop()?.replace('.md', '') || '';
+    if (!slug) return null;
+
+    const titleMatch = content.match(/^#\s+(.+)$/m);
+    const name = titleMatch ? titleMatch[1].trim() : slug;
+
+    const shortDescMatch = content.match(/^>\s+(.+)$/m);
+    const short_description = shortDescMatch ? shortDescMatch[1].trim() : name;
+
+    const getTableValue = (propName: string) => {
+      const reg = new RegExp(`\\|\\s*\\*\\*${propName}\\*\\*\\s*\\|\\s*([^|\\n]+)\\s*\\|`, 'i');
+      const m = content.match(reg);
+      return m ? m[1].trim() : null;
+    };
+
+    const cleanUrl = (val: string | null): string | null => {
+      if (!val || val.includes('Pending') || val.includes('Private')) return null;
+      const urlMatch = val.match(/\((https?:\/\/[^)]+)\)/) || val.match(/https?:\/\/[^\s\]]+/);
+      return urlMatch ? urlMatch[1] || urlMatch[0] : null;
+    };
+
+    const rawCategory = getTableValue('Project Category') || '';
+    let category: ProjectCategory = 'Experimental Projects';
+    if (rawCategory.includes('Client')) category = 'Client Projects';
+    else if (rawCategory.includes('Personal')) category = 'Personal Projects';
+    else if (rawCategory.includes('AI') || rawCategory.includes('Machine Learning')) category = 'AI & Machine Learning';
+    else if (rawCategory.includes('Web')) category = 'Web Applications';
+    else if (rawCategory.includes('Mobile')) category = 'Mobile Applications';
+    else if (rawCategory.includes('Academic')) category = 'Academic Projects';
+    else if (rawCategory.includes('Experimental')) category = 'Experimental Projects';
+    else if (filePath.includes('client-projects')) category = 'Client Projects';
+    else if (filePath.includes('personal-projects')) category = 'Personal Projects';
+    else if (filePath.includes('ai-ml-projects')) category = 'AI & Machine Learning';
+
+    const rawStatus = getTableValue('Current Status') || '';
+    let project_status: Project['project_status'] = 'Live';
+    if (rawStatus.includes('Needs Verification')) project_status = 'Needs Verification';
+    else if (rawStatus.includes('Development')) project_status = 'In Development';
+    else if (rawStatus.includes('Offline')) project_status = 'Offline';
+    else if (rawStatus.includes('Archived')) project_status = 'Archived';
+    else if (rawStatus.includes('Live')) project_status = 'Live';
+
+    const live_url = cleanUrl(getTableValue('Live Deployment URL'));
+    const github_repo_url = cleanUrl(getTableValue('GitHub Repository'));
+    const hosting_provider = getTableValue('Hosting Platform');
+    const deployment_date = getTableValue('Last Verified Date') || null;
+
+    const descMatch = content.match(/## 📝 Detailed Description\s+([\s\S]*?)(?=---\s+##|## 🛠️|$)/);
+    const detailed_description = descMatch ? descMatch[1].trim() : '';
+
+    const extractList = (subHeading: string): string[] => {
+      const reg = new RegExp(`${subHeading}[\\s\\S]*?-\\s*\\*\\*[^:]+:\\*\\*\\s*([^\\n]+)`, 'i');
+      const m = content.match(reg);
+      if (!m) return [];
+      return m[1].split(',').map((s) => s.trim()).filter(Boolean);
+    };
+
+    const frontend_technologies = extractList('### Frontend');
+    const backend_technologies = extractList('### Backend');
+
+    const dbMatch = content.match(/- \*\*Primary Database:\*\*\s*([^\n]+)/i);
+    const database = dbMatch && !dbMatch[1].includes('None') ? dbMatch[1].trim() : null;
+
+    const apisMatch = content.match(/- \*\*Services & Models:\*\*\s*([^\n]+)/i);
+    const apis_integrations = apisMatch && !apisMatch[1].includes('None')
+      ? apisMatch[1].split(',').map((s) => s.trim()).filter(Boolean)
+      : [];
+
+    let custom_domain: string | null = null;
+    if (live_url) {
+      try {
+        custom_domain = new URL(live_url).hostname;
+      } catch {
+        // ignore
+      }
+    }
+
+    const now = new Date().toISOString();
+
+    return {
+      id: `proj-${slug}`,
+      name,
+      slug,
+      short_description,
+      detailed_description,
+      category,
+      live_url,
+      custom_domain,
+      github_repo_url,
+      hosting_provider,
+      frontend_technologies,
+      backend_technologies,
+      database,
+      apis_integrations,
+      deployment_date,
+      project_status,
+      health_status: project_status === 'Live' ? 'healthy' : 'unknown',
+      last_health_check: now,
+      last_http_status: 200,
+      last_response_time_ms: 100,
+      last_synced_at: now,
+      last_commit_sha: null,
+      sync_status: 'synced',
+      created_at: deployment_date ? `${deployment_date}T00:00:00.000Z` : now,
+      updated_at: now,
+      project_logo: null,
+      screenshots: [],
+      additional_notes: 'Synchronized from GitHub repository documentation.',
+    };
+  } catch (e) {
+    console.error(`Failed to parse markdown for ${filePath}`, e);
+    return null;
+  }
+}
