@@ -122,7 +122,7 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       const saved = localStorage.getItem('projectvault_github_config');
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (parsed.repo_owner && parsed.repo_owner === 'hrishabh1103') {
+        if (parsed && typeof parsed === 'object') {
           return { ...fallback, ...parsed };
         }
       }
@@ -701,28 +701,57 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
       );
 
       // Call health check backend API (avoids CORS)
-      const res = await fetch('/api/health-check', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: project.live_url, projectId: project.id }),
-      });
-
       let isHealthy = false;
       let statusCode = 0;
       let latency = 0;
       let errMsg: string | null = null;
+      let backendHandled = false;
 
-      if (res.ok) {
-        const data = await res.json() as any;
-        isHealthy = data.isHealthy;
-        statusCode = data.statusCode;
-        latency = data.responseTime;
-        errMsg = data.error || null;
-      } else {
-        // Fallback simulation or basic check
-        statusCode = 502;
-        isHealthy = false;
-        errMsg = 'Health check service returned non-200';
+      try {
+        const res = await fetch('/api/health-check', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: project.live_url, projectId: project.id }),
+        });
+
+        if (res.ok) {
+          const contentType = res.headers.get('content-type') || '';
+          if (contentType.includes('application/json')) {
+            const data = (await res.json()) as any;
+            isHealthy = Boolean(data.isHealthy);
+            statusCode = data.statusCode || 200;
+            latency = data.responseTime || 0;
+            errMsg = data.error || null;
+            backendHandled = true;
+          }
+        }
+      } catch {
+        // Backend health check route unavailable or returned non-JSON
+      }
+
+      // If backend was not able to handle (e.g. static host without serverless functions), test directly via browser
+      if (!backendHandled) {
+        const startTime = Date.now();
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 7000);
+
+        try {
+          await fetch(project.live_url, {
+            mode: 'no-cors',
+            signal: controller.signal,
+          });
+          clearTimeout(timeoutId);
+          latency = Date.now() - startTime;
+          isHealthy = true;
+          statusCode = 200;
+          errMsg = null;
+        } catch (clientErr: any) {
+          clearTimeout(timeoutId);
+          latency = Date.now() - startTime;
+          isHealthy = false;
+          statusCode = clientErr.name === 'AbortError' ? 408 : 503;
+          errMsg = clientErr.name === 'AbortError' ? 'Probe timed out after 7s' : (clientErr.message || 'Host unreachable');
+        }
       }
 
       const healthState: HealthStatus = isHealthy ? 'healthy' : 'unhealthy';

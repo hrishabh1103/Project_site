@@ -15,6 +15,7 @@ import {
 import { useProjects } from '../context/ProjectContext';
 import { useToast } from '../context/ToastContext';
 import { isSupabaseConfigured } from '../lib/supabase';
+import { GitHubService } from '../lib/github-api';
 
 export const SettingsPage: React.FC = () => {
   const { githubConfig, updateGithubConfig } = useProjects();
@@ -64,22 +65,25 @@ export const SettingsPage: React.FC = () => {
     setIsTesting(true);
     setTestResult(null);
 
-    try {
-      const res = await fetch('/api/github/test', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          config: {
-            owner: repoOwner.trim(),
-            repo: repoName.trim(),
-            branch: branch.trim(),
-            token: token.trim(),
-          },
-        }),
-      });
+    const activeToken = token.trim() || githubConfig.access_token;
+    const activeOwner = repoOwner.trim() || githubConfig.repo_owner || 'hrishabh1103';
+    const activeRepo = repoName.trim() || githubConfig.repo_name || 'my-live-projects';
+    const activeBranch = branch.trim() || githubConfig.branch || 'main';
 
-      if (res.ok) {
-        const data = await res.json() as any;
+    // 1. Direct browser validation via GitHub REST API (CORS supported)
+    if (activeToken) {
+      try {
+        const gh = new GitHubService({
+          token: activeToken,
+          owner: activeOwner,
+          repo: activeRepo,
+          branch: activeBranch,
+          authorName: authorName.trim() || 'Hrishabh Gupta',
+          authorEmail: authorEmail.trim() || 'hrishabh1104@gmail.com',
+        });
+
+        const data = await gh.testConnection();
+
         if (data.success) {
           setTestResult({
             success: true,
@@ -87,24 +91,86 @@ export const SettingsPage: React.FC = () => {
             canPush: data.canPush,
           });
           success('Connection Verified', `Connected to ${data.repoFullName}`);
+
+          // Automatically persist the verified configuration
+          updateGithubConfig({
+            repo_owner: activeOwner,
+            repo_name: activeRepo,
+            branch: activeBranch,
+            access_token: activeToken,
+            author_name: authorName.trim() || 'Hrishabh Gupta',
+            author_email: authorEmail.trim() || 'hrishabh1104@gmail.com',
+            is_active: true,
+          });
         } else {
           setTestResult({
             success: false,
-            message: data.error || 'Connection failed',
+            message: data.error || 'Connection failed. Please check repository name and token permissions.',
           });
-          error('Connection Error', data.error);
+          error('Connection Error', data.error || 'Connection failed');
         }
-      } else {
-        const errJson = await res.json().catch(() => ({}));
+      } catch (err: any) {
         setTestResult({
           success: false,
-          message: errJson.error || 'Server error while contacting GitHub',
+          message: err.message || 'Network failure while contacting GitHub API.',
         });
+        error('Network Error', err.message);
+      } finally {
+        setIsTesting(false);
       }
-    } catch (err: any) {
+      return;
+    }
+
+    // 2. Server API fallback if no token was typed in the browser (e.g. server env var GITHUB_TOKEN)
+    try {
+      const res = await fetch('/api/github/test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          config: {
+            owner: activeOwner,
+            repo: activeRepo,
+            branch: activeBranch,
+          },
+        }),
+      });
+
+      if (res.ok) {
+        const contentType = res.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+          const data = (await res.json()) as any;
+          if (data.success) {
+            setTestResult({
+              success: true,
+              message: `Connected successfully to ${data.repoFullName} (branch: ${data.defaultBranch}) via server credentials. Push permission verified!`,
+              canPush: data.canPush,
+            });
+            success('Connection Verified', `Connected to ${data.repoFullName}`);
+            setIsTesting(false);
+            return;
+          } else {
+            setTestResult({
+              success: false,
+              message: data.error || 'Connection failed using server credentials.',
+            });
+            error('Connection Error', data.error);
+            setIsTesting(false);
+            return;
+          }
+        }
+      }
+
       setTestResult({
         success: false,
-        message: err.message || 'Network failure',
+        message:
+          'No GitHub Personal Access Token provided. Please enter your PAT (with "repo" scope) in the field above and click Test Connection.',
+      });
+      error('Token Required', 'Please enter your GitHub Personal Access Token.');
+    } catch {
+      setTestResult({
+        success: false,
+        message:
+          'No GitHub Personal Access Token provided. Please paste your PAT with "repo" permissions in the field above.',
       });
     } finally {
       setIsTesting(false);
