@@ -2,6 +2,10 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { User, Session } from '@supabase/supabase-js';
 
+// Dedicated Administrator Credentials
+export const ADMIN_EMAIL = 'admin@hrishabhgupta.com';
+export const ADMIN_PASSWORD = 'Manya@1103';
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
@@ -11,7 +15,6 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
-  enableDemoAuth: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -22,18 +25,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
+    // 1. Supabase Session check if configured
     if (isSupabaseConfigured) {
-      // 1. Get initial session from Supabase
       supabase.auth.getSession().then(({ data: { session } }) => {
-        setSession(session);
-        setUser(session?.user ?? null);
+        if (session?.user?.email?.toLowerCase() === ADMIN_EMAIL) {
+          setSession(session);
+          setUser(session.user);
+        }
         setIsLoading(false);
       });
 
-      // 2. Listen for auth state changes
       const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
+        if (session?.user?.email?.toLowerCase() === ADMIN_EMAIL) {
+          setSession(session);
+          setUser(session.user);
+        } else if (!session) {
+          setUser(null);
+          setSession(null);
+        }
         setIsLoading(false);
       });
 
@@ -41,21 +50,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         subscription.unsubscribe();
       };
     } else {
-      // In local mode without live Supabase credentials, check localStorage for a demo session
-      const savedUser = localStorage.getItem('projectvault_demo_user');
+      // 2. Standalone Production Mode: Validate saved session against authorized admin
+      const savedUser = localStorage.getItem('projectvault_auth_user');
       if (savedUser) {
         try {
           const parsed = JSON.parse(savedUser);
-          setUser(parsed);
-          setSession({
-            access_token: 'demo-token',
-            token_type: 'bearer',
-            expires_in: 3600,
-            refresh_token: 'demo-refresh',
-            user: parsed,
-          } as any);
+          if (parsed.email?.toLowerCase() === ADMIN_EMAIL) {
+            setUser(parsed);
+            setSession({
+              access_token: 'pv-auth-token-active',
+              token_type: 'bearer',
+              expires_in: 86400 * 7,
+              refresh_token: 'pv-refresh-token',
+              user: parsed,
+            } as any);
+          } else {
+            // Purge any unauthorized or legacy demo sessions
+            localStorage.removeItem('projectvault_auth_user');
+            localStorage.removeItem('projectvault_demo_user');
+            setUser(null);
+            setSession(null);
+          }
         } catch {
           setUser(null);
+          setSession(null);
         }
       }
       setIsLoading(false);
@@ -63,58 +81,79 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const signIn = async (email: string, password: string): Promise<{ error: Error | null }> => {
-    if (isSupabaseConfigured) {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      return { error };
-    } else {
-      // Local demo authorization
-      if (!email || !password) {
-        return { error: new Error('Email and password are required.') };
-      }
-      if (password.length < 6) {
-        return { error: new Error('Password must be at least 6 characters.') };
-      }
-      const demoUser: any = {
-        id: 'owner-user-0001',
-        email,
-        app_metadata: { provider: 'email' },
-        user_metadata: { full_name: 'ProjectVault Owner' },
+    const normalizedEmail = email.trim().toLowerCase();
+
+    // Check credentials against dedicated administrator ID & password
+    if (normalizedEmail === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
+      const adminUser: any = {
+        id: 'owner-hrishabh-gupta',
+        email: ADMIN_EMAIL,
+        app_metadata: { provider: 'email', role: 'owner' },
+        user_metadata: { full_name: 'Hrishabh Gupta' },
         aud: 'authenticated',
         created_at: new Date().toISOString(),
       };
-      localStorage.setItem('projectvault_demo_user', JSON.stringify(demoUser));
-      setUser(demoUser);
+
+      // Also authenticate with Supabase if configured
+      if (isSupabaseConfigured) {
+        const { error: supaError, data } = await supabase.auth.signInWithPassword({
+          email: normalizedEmail,
+          password,
+        });
+        if (!supaError && data.session) {
+          setUser(data.session.user);
+          setSession(data.session);
+          return { error: null };
+        }
+      }
+
+      // Grant standalone authorized session
+      localStorage.setItem('projectvault_auth_user', JSON.stringify(adminUser));
+      setUser(adminUser);
       setSession({
-        access_token: 'demo-token',
+        access_token: 'pv-auth-token-' + Date.now(),
         token_type: 'bearer',
-        expires_in: 3600,
-        refresh_token: 'demo-refresh',
-        user: demoUser,
+        expires_in: 86400 * 7,
+        refresh_token: 'pv-refresh-token',
+        user: adminUser,
       } as any);
+
       return { error: null };
     }
+
+    // Try Supabase auth if configured and user entered different credentials
+    if (isSupabaseConfigured) {
+      const { error, data } = await supabase.auth.signInWithPassword({
+        email: normalizedEmail,
+        password,
+      });
+      if (!error && data.session?.user?.email?.toLowerCase() === ADMIN_EMAIL) {
+        setUser(data.session.user);
+        setSession(data.session);
+        return { error: null };
+      }
+    }
+
+    // Strictly reject any unauthorized access attempt
+    return {
+      error: new Error('Invalid email or password. Access is strictly restricted to the authorized administrator.'),
+    };
   };
 
-  const signUp = async (email: string, password: string): Promise<{ error: Error | null }> => {
-    if (isSupabaseConfigured) {
-      const { error } = await supabase.auth.signUp({ email, password });
-      return { error };
-    } else {
-      return signIn(email, password);
-    }
+  const signUp = async (): Promise<{ error: Error | null }> => {
+    return {
+      error: new Error('Public registration is disabled. Only the system owner may access administrative controls.'),
+    };
   };
 
   const signOut = async (): Promise<void> => {
     if (isSupabaseConfigured) {
       await supabase.auth.signOut();
     }
+    localStorage.removeItem('projectvault_auth_user');
     localStorage.removeItem('projectvault_demo_user');
     setUser(null);
     setSession(null);
-  };
-
-  const enableDemoAuth = () => {
-    signIn('admin@projectvault.local', 'projectvault123');
   };
 
   return (
@@ -128,7 +167,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         signIn,
         signUp,
         signOut,
-        enableDemoAuth,
       }}
     >
       {children}
@@ -143,4 +181,3 @@ export const useAuth = () => {
   }
   return context;
 };
-

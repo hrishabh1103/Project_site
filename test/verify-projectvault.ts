@@ -1,4 +1,5 @@
 import { INITIAL_PROJECTS } from '../src/data/initialProjects';
+import { ADMIN_EMAIL, ADMIN_PASSWORD } from '../src/context/AuthContext';
 import {
   generateProjectMarkdown,
   generateReadmeMarkdown,
@@ -9,6 +10,15 @@ import {
 console.log('==============================================');
 console.log('   PROJECTVAULT INTEGRATION VERIFICATION      ');
 console.log('==============================================\n');
+
+// 0. Verify Dedicated Admin Credentials
+if (ADMIN_EMAIL !== 'admin@hrishabhgupta.com') {
+  throw new Error(`Expected ADMIN_EMAIL to be admin@hrishabhgupta.com, got ${ADMIN_EMAIL}`);
+}
+if (ADMIN_PASSWORD !== 'Manya@1103') {
+  throw new Error(`Expected ADMIN_PASSWORD to be Manya@1103, got ${ADMIN_PASSWORD}`);
+}
+console.log('✓ Administrator authentication credentials verified (admin@hrishabhgupta.com)');
 
 // 1. Verify Initial Projects count from existing repo
 console.log(`Checking tracked projects count: ${INITIAL_PROJECTS.length}`);
